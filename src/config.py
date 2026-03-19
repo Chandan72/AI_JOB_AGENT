@@ -19,10 +19,12 @@ class Config:
     )
     ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    
     OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")  # ← NEW
     OPENROUTER_BASE_URL: str = os.getenv(                          # ← NEW
         "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
     )
+    TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")
 
     @classmethod
     def validate(cls) -> None:
@@ -34,6 +36,8 @@ class Config:
             raise EnvironmentError("OPENAI_API_KEY is not set. Add it to your .env file.")
         if cls.LLM_PROVIDER == "openrouter" and not cls.OPENROUTER_API_KEY:  # ← NEW
             raise EnvironmentError("OPENROUTER_API_KEY is not set. Add it to your .env file.")
+        if not cls.TAVILY_API_KEY:
+            raise EnvironmentError("TAVILY_API_KEY is not set. Add it to your .env file.")
 
 
 def get_llm(temperature: float = 0.3) -> BaseChatModel:

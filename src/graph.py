@@ -4,6 +4,7 @@ from src.nodes import (
     router,
     job_fetcher,
     job_extractor,
+    company_researcher,
     resume_generator,
     cover_letter_generator,
     cold_email_drafter,
@@ -32,6 +33,7 @@ def build_graph():
     graph.add_node("router", router)
     graph.add_node("job_fetcher", job_fetcher)
     graph.add_node("job_extractor", job_extractor)
+    graph.add_node("company_researcher", company_researcher)
     graph.add_node("resume_generator", resume_generator)
     graph.add_node("cover_letter_generator", cover_letter_generator)
     graph.add_node("cold_email_drafter", cold_email_drafter)
@@ -53,9 +55,10 @@ def build_graph():
 
     # ── job_fetcher always goes to job_extractor ───────────────
     graph.add_edge("job_fetcher", "job_extractor")
+    graph.add_edge("job_extractor", "company_researcher")
 
     # ── Linear pipeline after extraction ──────────────────────
-    graph.add_edge("job_extractor", "resume_generator")
+    graph.add_edge("company_researcher", "resume_generator")
     graph.add_edge("resume_generator", "cover_letter_generator")
     graph.add_edge("cover_letter_generator", "cold_email_drafter")
     graph.add_edge("cold_email_drafter", "output_formatter")

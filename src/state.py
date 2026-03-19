@@ -32,6 +32,7 @@ class AgentState(TypedDict, total=False):
     user_profile: dict
     raw_job_content: str
     job_details: JobDetails
+    company_intelligence: dict
     tailored_resume: str
     cover_letter: str
     cold_email: str

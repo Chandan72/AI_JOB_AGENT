@@ -15,6 +15,7 @@ from src.prompts import (
     RESUME_GENERATION_PROMPT,
     COVER_LETTER_PROMPT,
     COLD_EMAIL_PROMPT,
+    COMPANY_RESEARCH_PROMPT,
 )
 
 console = Console()
@@ -141,6 +142,159 @@ def job_extractor(state: AgentState) -> AgentState:
             "current_step": "job_extractor",
         }
 
+def company_researcher(state: AgentState) -> AgentState:
+    """
+    RAG node — retrieves real company intelligence from the web
+    and structures it into actionable signals for downstream nodes.
+
+    Retrieve  → Tavily search for recent company news + culture
+    Augment   → LLM structures raw results into intelligence dict
+    Generate  → intelligence stored in state for all downstream nodes
+    """
+    console.print(
+        "\n[bold cyan]► Step 3.5/7:[/bold cyan] "
+        "Researching company intelligence..."
+    )
+
+    if state.get("error"):
+        return state
+
+    job_details = state.get("job_details", {})
+    company_name = job_details.get("company_name", "")
+    job_title    = job_details.get("job_title", "")
+
+    if not company_name:
+        console.print(
+            "   [yellow]⚠ No company name found — "
+            "skipping research.[/yellow]"
+        )
+        return {
+            **state,
+            "company_intelligence": {},
+            "current_step": "company_researcher",
+        }
+
+    # ── RETRIEVE — search for company intelligence ─────────────
+    console.print(f"   Searching for: [bold]{company_name}[/bold]")
+
+    try:
+        from tavily import TavilyClient
+        client = TavilyClient(api_key=Config.TAVILY_API_KEY)
+
+        # Run three targeted searches simultaneously
+        search_queries = [
+            f"{company_name} company news 2024 2025",
+            f"{company_name} product launch engineering culture",
+            f"{company_name} {job_title} team challenges growth",
+        ]
+
+        all_results = []
+        for query in search_queries:
+            results = client.search(
+                query=query,
+                search_depth="basic",
+                max_results=3,
+            )
+            for r in results.get("results", []):
+                all_results.append(
+                    f"Source: {r.get('url', '')}\n"
+                    f"Title: {r.get('title', '')}\n"
+                    f"Content: {r.get('content', '')}\n"
+                )
+
+        if not all_results:
+            console.print(
+                "   [yellow]⚠ No research results found — "
+                "continuing with job details only.[/yellow]"
+            )
+            return {
+                **state,
+                "company_intelligence": {},
+                "current_step": "company_researcher",
+            }
+
+        raw_research = "\n\n---\n\n".join(all_results)
+        result_count = len(all_results)
+        console.print(
+            f"   [green]✓ Retrieved {result_count} "
+            f"research results[/green]"
+        )
+
+    except Exception as e:
+        # RAG failure is non-fatal — degrade gracefully
+        console.print(
+            f"   [yellow]⚠ Research retrieval failed: {str(e)}\n"
+            f"   Continuing without company intelligence.[/yellow]"
+        )
+        return {
+            **state,
+            "company_intelligence": {},
+            "current_step": "company_researcher",
+        }
+
+    # ── AUGMENT — structure raw results with LLM ───────────────
+    console.print("   Analysing and structuring intelligence...")
+
+    llm   = get_llm(temperature=0.1)
+    chain = COMPANY_RESEARCH_PROMPT | llm
+
+    try:
+        response = chain.invoke({
+            "company_name":  company_name,
+            "job_title":     job_title,
+            "raw_research":  raw_research,
+        })
+
+        raw_json = response.content.strip()
+
+        # Strip markdown fences if model added them
+        if raw_json.startswith("```"):
+            raw_json = raw_json.split("```")[1]
+            if raw_json.startswith("json"):
+                raw_json = raw_json[4:]
+
+        company_intelligence = json.loads(raw_json)
+
+        # Log the cover letter hook so user sees value immediately
+        hook = company_intelligence.get("cover_letter_hook", "")
+        if hook:
+            console.print(
+                f"   [green]✓ Intelligence extracted[/green]"
+            )
+            console.print(
+                f"   [dim]Cover letter hook:[/dim] "
+                f"[italic]{hook[:80]}...[/italic]"
+            )
+
+        return {
+            **state,
+            "company_intelligence": company_intelligence,
+            "current_step": "company_researcher",
+        }
+
+    except json.JSONDecodeError as e:
+        console.print(
+            f"   [yellow]⚠ Could not parse intelligence "
+            f"JSON: {str(e)}\n"
+            f"   Continuing without structured intelligence.[/yellow]"
+        )
+        return {
+            **state,
+            "company_intelligence": {},
+            "current_step": "company_researcher",
+        }
+    except Exception as e:
+        console.print(
+            f"   [yellow]⚠ Intelligence structuring failed: "
+            f"{str(e)}\n"
+            f"   Continuing without company intelligence.[/yellow]"
+        )
+        return {
+            **state,
+            "company_intelligence": {},
+            "current_step": "company_researcher",
+        }
+
 
 # ── Node 4: Resume Generator ───────────────────────────────────
 
@@ -174,6 +328,9 @@ def resume_generator(state: AgentState) -> AgentState:
             "requirements": _get_job_field(job_details, "requirements"),
             "tech_stack": _get_job_field(job_details, "tech_stack"),
             "seniority_level": _get_job_field(job_details, "seniority_level"),
+            "company_context": state.get("company_intelligence", {}).get(
+        "relevance_to_role", "Not available"
+    ),
         })
 
         resume_content = response.content.strip()
@@ -218,6 +375,12 @@ def cover_letter_generator(state: AgentState) -> AgentState:
             "responsibilities": _get_job_field(job_details, "responsibilities"),
             "seniority_level": _get_job_field(job_details, "seniority_level"),
             "hiring_manager_name": _get_job_field(job_details, "hiring_manager_name", ""),
+            "company_intelligence": json.dumps(
+        state.get("company_intelligence", {}), indent=2
+    ),
+    "cover_letter_hook": state.get(
+        "company_intelligence", {}
+    ).get("cover_letter_hook", ""),
         })
 
         cover_letter_content = response.content.strip()
@@ -261,6 +424,9 @@ def cold_email_drafter(state: AgentState) -> AgentState:
             "recruiter_name": _get_job_field(job_details, "recruiter_name", ""),
             "hiring_manager_name": _get_job_field(job_details, "hiring_manager_name", ""),
             "application_email": _get_job_field(job_details, "application_email", ""),
+            "cold_email_context": state.get(
+        "company_intelligence", {}
+    ).get("cold_email_context", ""),
         })
 
         cold_email_content = response.content.strip()
