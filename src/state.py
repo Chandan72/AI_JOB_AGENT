@@ -36,6 +36,7 @@ class AgentState(TypedDict, total=False):
     tailored_resume: str
     cover_letter: str
     cold_email: str
+    resume_pdf_path: str
     error: Optional[str]
     current_step: str
     output_dir: str

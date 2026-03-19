@@ -17,7 +17,7 @@ from src.prompts import (
     COLD_EMAIL_PROMPT,
     COMPANY_RESEARCH_PROMPT,
 )
-
+from src.pdf_generator import generate_resume_pdf
 console = Console()
 
 
@@ -444,6 +444,70 @@ def cold_email_drafter(state: AgentState) -> AgentState:
             "error": f"Cold email drafting failed: {str(e)}",
             "current_step": "cold_email_drafter"
         }
+        
+# ── Node 6.5: PDF Resume Generator ────────────────────────────
+
+def pdf_resume_generator(state: AgentState) -> AgentState:
+    """
+    Converts the tailored Markdown resume into a
+    professionally formatted PDF using ReportLab.
+    Runs after cold_email_drafter, before output_formatter.
+    """
+    console.print(
+        "\n[bold cyan]► Step 6.5/7:[/bold cyan] "
+        "Generating PDF resume..."
+    )
+
+    if state.get("error"):
+        return state
+
+    tailored_resume = state.get("tailored_resume", "")
+    if not tailored_resume:
+        console.print(
+            "   [yellow]⚠ No resume content found — "
+            "skipping PDF generation.[/yellow]"
+        )
+        return {**state, "resume_pdf_path": "", "current_step": "pdf_resume_generator"}
+
+    # ── Build output path ──────────────────────────────────────
+    output_dir = Path(state.get("output_dir", "./outputs"))
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    job_details = state.get("job_details", {})
+    company  = job_details.get("company_name", "company")\
+        .replace(" ", "_").lower()
+    role     = job_details.get("job_title", "role")\
+        .replace(" ", "_").lower()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    pdf_path  = str(output_dir / f"{company}_{role}_{timestamp}_resume.pdf")
+
+    # ── Generate PDF ───────────────────────────────────────────
+    try:
+        generate_resume_pdf(
+            tailored_resume_markdown=tailored_resume,
+            output_path=pdf_path,
+            user_profile=state.get("user_profile", {}),
+        )
+        console.print(
+            f"   [green]✓ PDF resume saved:[/green] "
+            f"[dim]{pdf_path}[/dim]"
+        )
+        return {
+            **state,
+            "resume_pdf_path": pdf_path,
+            "current_step": "pdf_resume_generator",
+        }
+
+    except Exception as e:
+        console.print(
+            f"   [yellow]⚠ PDF generation failed: {str(e)}\n"
+            f"   Markdown resume is still saved.[/yellow]"
+        )
+        return {
+            **state,
+            "resume_pdf_path": "",
+            "current_step": "pdf_resume_generator",
+        }
 
 
 # ── Node 7: Output Formatter ───────────────────────────────────
@@ -476,6 +540,10 @@ def output_formatter(state: AgentState) -> AgentState:
     resume_path = output_dir / f"{prefix}_resume.md"
     resume_path.write_text(state.get("tailored_resume", ""), encoding="utf-8")
     files_saved.append(("Tailored Resume", str(resume_path)))
+    
+    pdf_path = state.get("resume_pdf_path", "")
+    if pdf_path:
+        files_saved.append(("📄 Resume PDF", pdf_path))
 
     # Save cover letter
     cover_path = output_dir / f"{prefix}_cover_letter.md"
