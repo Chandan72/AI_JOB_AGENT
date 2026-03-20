@@ -40,5 +40,12 @@ class AgentState(TypedDict, total=False):
     error: Optional[str]
     current_step: str
     output_dir: str
+    
+    # HUMAN IN THE LOOP — NEW
+    email_feedback: str          # user feedback for regeneration
+    email_approved: bool         # True when user approves
+    email_recipient: str         # destination email address
+    email_sent: bool             # True after successful send
+    email_version: int 
 
 

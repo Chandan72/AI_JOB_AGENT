@@ -8,6 +8,8 @@ from src.nodes import (
     resume_generator,
     cover_letter_generator,
     cold_email_drafter,
+    human_feedback_loop,
+    gmail_sender,
     pdf_resume_generator,
     output_formatter,
 )
@@ -38,6 +40,8 @@ def build_graph():
     graph.add_node("resume_generator", resume_generator)
     graph.add_node("cover_letter_generator", cover_letter_generator)
     graph.add_node("cold_email_drafter", cold_email_drafter)
+    graph.add_node("human_feedback_loop", human_feedback_loop)
+    graph.add_node("gmail_sender", gmail_sender)
     graph.add_node("pdf_resume_generator", pdf_resume_generator)
     graph.add_node("output_formatter", output_formatter)
 
@@ -63,7 +67,9 @@ def build_graph():
     graph.add_edge("company_researcher", "resume_generator")
     graph.add_edge("resume_generator", "cover_letter_generator")
     graph.add_edge("cover_letter_generator", "cold_email_drafter")
-    graph.add_edge("cold_email_drafter", "pdf_resume_generator")
+    graph.add_edge("cold_email_drafter", "human_feedback_loop")
+    graph.add_edge("human_feedback_loop", "gmail_sender")
+    graph.add_edge("gmail_sender", "pdf_resume_generator")
     graph.add_edge("pdf_resume_generator", "output_formatter")
 
     # ── End ────────────────────────────────────────────────────

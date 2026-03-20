@@ -1,0 +1,34 @@
+{
+  "company_name": "Persistent",
+  "job_title": "machine learning engineer",
+  "job_url": "",
+  "location": "",
+  "job_type": "",
+  "seniority_level": "Junior",
+  "industry": "",
+  "salary_range": "",
+  "about_company": "",
+  "team_info": "",
+  "required_skills": [
+    "AI/ML Engineer",
+    "langgraph",
+    "langchain",
+    "langsmith",
+    "fundamentls of OS"
+  ],
+  "preferred_skills": [],
+  "tech_stack": [
+    "langgraph",
+    "langchain",
+    "langsmith"
+  ],
+  "responsibilities": [
+    "built production ready agents"
+  ],
+  "requirements": [
+    "0-2 years of experience in AI/ML Engineer"
+  ],
+  "recruiter_name": "",
+  "hiring_manager_name": "",
+  "application_email": ""
+}

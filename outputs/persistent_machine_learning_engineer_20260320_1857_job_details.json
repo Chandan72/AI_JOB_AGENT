@@ -1,0 +1,35 @@
+{
+  "company_name": "Persistent",
+  "job_title": "Machine Learning Engineer",
+  "job_url": "",
+  "location": "",
+  "job_type": "",
+  "seniority_level": "Junior",
+  "industry": "",
+  "salary_range": "",
+  "about_company": "",
+  "team_info": "",
+  "required_skills": [
+    "LangGraph",
+    "LangChain",
+    "LangSmith",
+    "Production ready agents",
+    "Fundamentals of OS"
+  ],
+  "preferred_skills": [],
+  "tech_stack": [
+    "LangGraph",
+    "LangChain",
+    "LangSmith",
+    "OS fundamentals"
+  ],
+  "responsibilities": [],
+  "requirements": [
+    "0-2 years of experience in AI/ML Engineer",
+    "Hands-on with LangGraph, LangChain, LangSmith to build production ready agents",
+    "Fundamentals of OS"
+  ],
+  "recruiter_name": "",
+  "hiring_manager_name": "",
+  "application_email": ""
+}

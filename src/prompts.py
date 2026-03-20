@@ -294,3 +294,88 @@ Return a single JSON object with these exact keys:
 
 Return ONLY the JSON. No markdown fences. No explanation.""")
 ])
+
+# ── Email Regeneration (Human Feedback) ───────────────────────
+# ── Email Regeneration (Human Feedback) ───────────────────────
+EMAIL_REGENERATION_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", """You are an expert cold email writer improving 
+an existing cold email based on specific human feedback.
+
+CRITICAL RULES — NEVER BREAK THESE:
+1. ALWAYS output BOTH Version A and Version B in full
+2. NEVER remove the email body — only modify what feedback asks
+3. NEVER shrink the email to just a signature or contact info
+4. ONLY change the specific things mentioned in the feedback
+5. Keep everything else EXACTLY as it was
+6. Always preserve the full Markdown structure:
+   - ## Version A header
+   - **To:** line
+   - **Subject:** line
+   - Full email body paragraphs
+   - Sign-off with candidate name
+   - ## Version B header (same structure)
+   - ## Usage Notes section
+
+If feedback says "change X to Y" — change ONLY that.
+If feedback says "make it more casual" — rewrite tone only.
+If feedback says "make it shorter" — trim but keep full structure.
+NEVER output just a signature. NEVER output just contact info."""),
+
+    ("human", """Improve this cold email based on the feedback.
+
+━━━━━━━━━━━━━━━━━━━━━
+ORIGINAL EMAIL (keep this full structure)
+━━━━━━━━━━━━━━━━━━━━━
+{current_email}
+
+━━━━━━━━━━━━━━━━━━━━━
+FEEDBACK TO APPLY
+━━━━━━━━━━━━━━━━━━━━━
+{feedback}
+
+━━━━━━━━━━━━━━━━━━━━━
+CANDIDATE PROFILE
+━━━━━━━━━━━━━━━━━━━━━
+{user_profile}
+
+━━━━━━━━━━━━━━━━━━━━━
+COMPANY CONTEXT
+━━━━━━━━━━━━━━━━━━━━━
+{company_context}
+
+━━━━━━━━━━━━━━━━━━━━━
+OUTPUT REQUIREMENTS
+━━━━━━━━━━━━━━━━━━━━━
+Output the COMPLETE improved email with this exact structure:
+
+# Cold Outreach Emails — [Role] at [Company]
+
+## Version A — To Recruiter
+**To:** [recruiter name or generic]
+**Subject:** [subject line]
+
+[Full email body — minimum 3 sentences]
+
+[Sign-off]
+[Candidate name]
+
+---
+
+## Version B — To Hiring Manager
+**To:** [hiring manager name or generic]
+**Subject:** [subject line]
+
+[Full email body — minimum 3 sentences]
+
+[Sign-off]
+[Candidate name]
+
+---
+
+## Usage Notes
+- Send Version A first via LinkedIn or email
+- Wait 5 business days before sending Version B
+- Never send both on the same day
+
+Apply ONLY what the feedback asks. Keep everything else identical.""")
+])

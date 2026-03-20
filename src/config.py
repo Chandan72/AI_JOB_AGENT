@@ -25,6 +25,8 @@ class Config:
         "OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"
     )
     TAVILY_API_KEY: str = os.getenv("TAVILY_API_KEY", "")
+    GMAIL_SENDER_EMAIL: str = os.getenv("GMAIL_SENDER_EMAIL", "")
+    GMAIL_APP_PASSWORD: str = os.getenv("GMAIL_APP_PASSWORD", "")
 
     @classmethod
     def validate(cls) -> None:
@@ -38,6 +40,10 @@ class Config:
             raise EnvironmentError("OPENROUTER_API_KEY is not set. Add it to your .env file.")
         if not cls.TAVILY_API_KEY:
             raise EnvironmentError("TAVILY_API_KEY is not set. Add it to your .env file.")
+        if not cls.GMAIL_SENDER_EMAIL:
+            raise EnvironmentError("GMAIL_SENDER_EMAIL is not set. Add it to your .env file.")
+        if not cls.GMAIL_APP_PASSWORD:
+            raise EnvironmentError("GMAIL_APP_PASSWORD is not set. Add it to your .env file.")
 
 
 def get_llm(temperature: float = 0.3) -> BaseChatModel:
