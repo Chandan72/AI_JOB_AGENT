@@ -179,24 +179,30 @@ Dear Hiring Team,
 
 
 # ── Cold Email Drafter ─────────────────────────────────────────
-COLD_EMAIL_PROMPT = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            """You are an expert in professional outreach. You write cold emails
-that get replies. Your emails are:
-  - Short: under 100 words in the body
-  - Specific: one concrete reason for reaching out to THIS person
-  - Valuable: signals what the candidate brings, not just what they want
-  - Human: sounds like a real person wrote it, not a template
+# ── Cold Email Drafter (Single Version) ───────────────────────
+COLD_EMAIL_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", """You are an expert cold email writer.
+You write one focused, targeted cold email that gets replies.
 
-Write TWO versions:
-  Version A: To the recruiter
-  Version B: To the hiring manager""",
-        ),
-        (
-            "human",
-            """Draft cold outreach emails for this candidate.
+Your emails are:
+  - Short: under 100 words in the body
+  - Specific: reference something real about the company
+  - Valuable: lead with what the candidate brings
+  - Human: sounds like a real person wrote it
+  - Clean: NO placeholder text like [Name] or [Company]
+    Use real names from the data. If unknown use 'Hi there,'
+
+Never use square bracket placeholders of any kind."""),
+
+    ("human", """Write ONE cold email for this candidate.
+
+━━━━━━━━━━━━━━━━━━━━━
+TARGET
+━━━━━━━━━━━━━━━━━━━━━
+Sending to: {target_type}
+Name: {target_name}
+Company: {company_name}
+Role: {job_title}
 
 ━━━━━━━━━━━━━━━━━━━━━
 CANDIDATE PROFILE
@@ -204,55 +210,33 @@ CANDIDATE PROFILE
 {user_profile}
 
 ━━━━━━━━━━━━━━━━━━━━━
-TARGET JOB DETAILS
+COMPANY INTELLIGENCE
 ━━━━━━━━━━━━━━━━━━━━━
-Company: {company_name}
-Role: {job_title}
-Company Intelligence: {cold_email_context}
-About Company: {about_company}
-Required Skills: {required_skills}
-Recruiter: {recruiter_name}
-Hiring Manager: {hiring_manager_name}
-Application Email: {application_email}
+{company_intelligence}
 
 ━━━━━━━━━━━━━━━━━━━━━
 INSTRUCTIONS
 ━━━━━━━━━━━━━━━━━━━━━
-1. Subject line must be specific — not just 'Following up on [role]'
-2. Open with one sentence showing context awareness
-3. One sentence on what the candidate brings relevant to this role
-4. One specific proof point — a number or achievement from their profile
-5. Simple ask: 15-minute call or share portfolio link
-6. Sign off with first name only
+1. Subject line must be specific and compelling
+2. Opening line references something real about {company_name}
+3. One sentence on what the candidate brings to THIS role
+4. One specific proof point with a number from their profile
+5. Simple ask — 15 minute call or portfolio link
+6. Sign off with candidate first name only
+7. Under 100 words in the body
+8. NO placeholders — use real names or 'Hi there,'
 
-Format as Markdown:
+Format exactly like this:
 
-# Cold Outreach Emails — {job_title} at {company_name}
+**Subject:** [your subject line]
 
-## Version A — To Recruiter
-**To:** {recruiter_name}
-**Subject:** [subject line]
+[greeting],
 
-[email body — under 100 words]
+[body — 3-4 sentences max]
 
----
-
-## Version B — To Hiring Manager
-**To:** {hiring_manager_name}
-**Subject:** [subject line]
-
-[email body — under 100 words]
-
----
-
-## Usage Notes
-- Send Version A first via LinkedIn or email
-- Wait 5 business days before sending Version B
-- Never send both on the same day
-""",
-        ),
-    ]
-)
+[sign-off],
+[first name]""")
+])
 # ── Company Research RAG ───────────────────────────────────────
 COMPANY_RESEARCH_PROMPT = ChatPromptTemplate.from_messages([
     ("system",

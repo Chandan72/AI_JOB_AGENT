@@ -47,5 +47,7 @@ class AgentState(TypedDict, total=False):
     email_recipient: str         # destination email address
     email_sent: bool             # True after successful send
     email_version: int 
+    email_target_type: str      # ← ADD: "Recruiter" / "Hiring Manager" / "skip"
+    email_target_name: str
 
 

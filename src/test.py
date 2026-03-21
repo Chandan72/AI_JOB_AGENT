@@ -8,4 +8,5 @@ Chat=ChatAnthropic(
     anthropic_api_key=Config.ANTHROPIC_API_KEY,
 )
 
+
 print(Chat.invoke("Hello, how are you?"))

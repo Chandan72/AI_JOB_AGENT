@@ -14,6 +14,7 @@ from src.prompts import (
     JOB_EXTRACTION_PROMPT,
     RESUME_GENERATION_PROMPT,
     COVER_LETTER_PROMPT,
+    
     COLD_EMAIL_PROMPT,
     COMPANY_RESEARCH_PROMPT,
     EMAIL_REGENERATION_PROMPT,
@@ -400,53 +401,184 @@ def cover_letter_generator(state: AgentState) -> AgentState:
             "error": f"Cover letter generation failed: {str(e)}",
             "current_step": "cover_letter_generator"
         }
+        
 
+# ── Node 5.5: Email Intent Selector ───────────────────────────
 
-# ── Node 6: Cold Email Drafter ─────────────────────────────────
+def email_intent_selector(state: AgentState) -> AgentState:
+    """
+    Asks the user ONE question before generating the cold email:
+    Are you sending this to a recruiter or hiring manager?
 
-def cold_email_drafter(state: AgentState) -> AgentState:
-    console.print("\n[bold cyan]► Step 6/7:[/bold cyan] Drafting cold outreach emails...")
+    This single decision ensures the drafter generates
+    one focused, targeted email instead of two generic ones.
+    Implements the progressive narrowing principle —
+    narrow intent before generating content.
+    """
+    console.print("\n" + "═" * 60)
+    console.print("[bold cyan]COLD EMAIL SETUP[/bold cyan]")
+    console.print("═" * 60)
 
     if state.get("error"):
         return state
 
     job_details = state.get("job_details", {})
-    user_profile = state.get("user_profile", {})
+    recruiter   = job_details.get("recruiter_name", "")
+    hm          = job_details.get("hiring_manager_name", "")
 
-    llm = get_llm(temperature=0.4)
+    console.print(
+        f"\n  Company: [bold]"
+        f"{job_details.get('company_name', 'Unknown')}[/bold]"
+    )
+    console.print(
+        f"  Role:    [bold]"
+        f"{job_details.get('job_title', 'Unknown')}[/bold]\n"
+    )
+
+    # ── Show who we found ──────────────────────────────────────
+    if recruiter:
+        console.print(f"  Recruiter found:        [green]{recruiter}[/green]")
+    else:
+        console.print("  Recruiter:              [dim]Unknown[/dim]")
+
+    if hm:
+        console.print(f"  Hiring Manager found:   [green]{hm}[/green]")
+    else:
+        console.print("  Hiring Manager:         [dim]Unknown[/dim]")
+
+    console.print(
+        "\n[bold]Who are you sending this email to?[/bold]\n"
+        "  [1] Recruiter\n"
+        "  [2] Hiring Manager\n"
+        "  [S] Skip — I don't need a cold email right now\n"
+    )
+
+    while True:
+        choice = input("Your choice (1/2/S): ").strip().upper()
+
+        if choice == "S":
+            console.print(
+                "\n[dim]Skipping cold email generation.[/dim]"
+            )
+            return {
+                **state,
+                "email_target_type": "skip",
+                "current_step": "email_intent_selector",
+            }
+
+        elif choice == "1":
+            target_name = recruiter if recruiter else "the recruiter"
+            console.print(
+                f"\n[green]✓ Generating recruiter email"
+                f"{f' for {recruiter}' if recruiter else ''}[/green]"
+            )
+            return {
+                **state,
+                "email_target_type": "Recruiter",
+                "email_target_name": target_name,
+                "current_step": "email_intent_selector",
+            }
+
+        elif choice == "2":
+            target_name = hm if hm else "the hiring manager"
+            console.print(
+                f"\n[green]✓ Generating hiring manager email"
+                f"{f' for {hm}' if hm else ''}[/green]"
+            )
+            return {
+                **state,
+                "email_target_type": "Hiring Manager",
+                "email_target_name": target_name,
+                "current_step": "email_intent_selector",
+            }
+
+        else:
+            console.print(
+                "[yellow]Please enter 1, 2, or S.[/yellow]"
+            )
+
+
+# ── Node 6: Cold Email Drafter ─────────────────────────────────
+
+# ── Node 6: Cold Email Drafter (Single Focused Email) ─────────
+
+def cold_email_drafter(state: AgentState) -> AgentState:
+    """
+    Generates ONE focused cold email based on the intent
+    selected in email_intent_selector.
+
+    Single email = clean feedback loop.
+    User can refine this one email as many times as needed.
+    """
+    console.print(
+        "\n[bold cyan]► Step 6/7:[/bold cyan] "
+        "Drafting cold email..."
+    )
+
+    if state.get("error"):
+        return state
+
+    # ── Skip if user opted out ─────────────────────────────────
+    if state.get("email_target_type") == "skip":
+        console.print(
+            "   [dim]Cold email skipped by user.[/dim]"
+        )
+        return {
+            **state,
+            "cold_email": "",
+            "current_step": "cold_email_drafter",
+        }
+
+    job_details  = state.get("job_details", {})
+    user_profile = state.get("user_profile", {})
+    intelligence = state.get("company_intelligence", {})
+
+    target_type = state.get("email_target_type", "Recruiter")
+    target_name = state.get("email_target_name", "")
+
+    llm   = get_llm(temperature=0.4)
     chain = COLD_EMAIL_PROMPT | llm
+
+    # Build company intelligence summary
+    company_context = "\n".join(filter(None, [
+        intelligence.get("company_summary", ""),
+        intelligence.get("cold_email_context", ""),
+        intelligence.get("cover_letter_hook", ""),
+    ])) or "No additional context available."
 
     try:
         response = chain.invoke({
-            "user_profile": _format_profile(user_profile),
-            "company_name": _get_job_field(job_details, "company_name"),
-            "job_title": _get_job_field(job_details, "job_title"),
-            "about_company": _get_job_field(job_details, "about_company"),
-            "required_skills": _get_job_field(job_details, "required_skills"),
-            "recruiter_name": _get_job_field(job_details, "recruiter_name", ""),
-            "hiring_manager_name": _get_job_field(job_details, "hiring_manager_name", ""),
-            "application_email": _get_job_field(job_details, "application_email", ""),
-            "cold_email_context": state.get(
-        "company_intelligence", {}
-    ).get("cold_email_context", ""),
+            "target_type":          target_type,
+            "target_name":          target_name,
+            "company_name":         _get_job_field(
+                job_details, "company_name"
+            ),
+            "job_title":            _get_job_field(
+                job_details, "job_title"
+            ),
+            "user_profile":         _format_profile(user_profile),
+            "company_intelligence": company_context,
         })
 
         cold_email_content = response.content.strip()
-        console.print(f"   [green]✓ Cold emails drafted[/green]")
+        console.print(
+            f"   [green]✓ Cold email drafted "
+            f"({target_type})[/green]"
+        )
 
         return {
             **state,
-            "cold_email": cold_email_content,
-            "current_step": "cold_email_drafter",
+            "cold_email":    cold_email_content,
+            "email_version": 1,
+            "current_step":  "cold_email_drafter",
         }
 
     except Exception as e:
         return {
             **state,
             "error": f"Cold email drafting failed: {str(e)}",
-            "current_step": "cold_email_drafter"
+            "current_step": "cold_email_drafter",
         }
-        
 # ── Node 6.5: PDF Resume Generator ────────────────────────────
 
 def pdf_resume_generator(state: AgentState) -> AgentState:
@@ -514,123 +646,166 @@ def pdf_resume_generator(state: AgentState) -> AgentState:
         
 # ── Node 7: Human Feedback Loop ───────────────────────────────
 
+# ── Node 7: Human Feedback Loop ───────────────────────────────
+
 def human_feedback_loop(state: AgentState) -> AgentState:
     """
-    LangGraph Human-in-the-Loop node.
+    Shows ONE cold email. User can:
+      [F] Give feedback → regenerate → loop
+      [A] Approve → move to send
+      [S] Skip → save draft only
 
-    Shows the generated cold email to the user in the terminal.
-    Accepts three commands:
-      [A] Approve — move to sending
-      [F] Feedback — regenerate with instructions
-      [S] Skip — save draft, do not send
-
-    Loops until user approves or skips.
-    Uses LangGraph interrupt() to pause graph execution
-    and wait for real human input.
+    Clean loop because there is only one email to refine.
     """
+    if state.get("error"):
+        return state
+
+    # ── Skip if cold email was skipped ─────────────────────────
+    if not state.get("cold_email"):
+        return {
+            **state,
+            "email_approved": False,
+            "email_sent":     False,
+            "current_step":   "human_feedback_loop",
+        }
+
     console.print("\n" + "═" * 60)
     console.print("[bold cyan]COLD EMAIL REVIEW[/bold cyan]")
     console.print("═" * 60)
 
-    if state.get("error"):
-        return state
-
-    cold_email  = state.get("cold_email", "")
-    version     = state.get("email_version", 1)
-    job_details = state.get("job_details", {})
+    job_details  = state.get("job_details", {})
     user_profile = state.get("user_profile", {})
+    intelligence = state.get("company_intelligence", {})
+    cold_email   = state.get("cold_email", "")
+    version      = state.get("email_version", 1)
+    target_type  = state.get("email_target_type", "Recruiter")
 
-    # ── Display current version ────────────────────────────────
-    console.print(
-        f"\n[bold yellow]VERSION {version}[/bold yellow] — "
-        f"{job_details.get('job_title', '')} "
-        f"@ {job_details.get('company_name', '')}\n"
-    )
-    console.print(cold_email)
-    console.print("\n" + "─" * 60)
+    # ── Display current email ──────────────────────────────────
+    def show_email(email: str, ver: int) -> None:
+        console.print(
+            f"\n[bold yellow]VERSION {ver}[/bold yellow] — "
+            f"[dim]{target_type} email for "
+            f"{job_details.get('company_name', '')}[/dim]\n"
+        )
+        console.print("─" * 60)
+        console.print(email)
+        console.print("─" * 60)
 
-    # ── Get user choice ────────────────────────────────────────
-    console.print(
-        "\n[bold]YOUR OPTIONS:[/bold]\n"
-        "  [A] Approve and send this email\n"
-        "  [F] Give feedback to improve it\n"
-        "  [S] Skip sending — save draft only\n"
-    )
+    show_email(cold_email, version)
 
     while True:
+        console.print(
+            "\n[bold]YOUR OPTIONS:[/bold]\n"
+            "  [A] Approve and send\n"
+            "  [F] Give feedback to improve\n"
+            "  [S] Skip — save draft, do not send\n"
+        )
+
         choice = input("Your choice (A/F/S): ").strip().upper()
 
+        # ── Skip ───────────────────────────────────────────────
         if choice == "S":
             console.print(
-                "\n[dim]Skipping send — "
-                "email saved to outputs folder.[/dim]"
+                "\n[dim]Skipping — email saved to outputs.[/dim]"
             )
             return {
                 **state,
+                "cold_email":     cold_email,
                 "email_approved": False,
                 "email_sent":     False,
                 "current_step":   "human_feedback_loop",
             }
 
+        # ── Approve ────────────────────────────────────────────
         elif choice == "A":
-            # ── Get recipient email ────────────────────────────
-            console.print()
-            recipient = input(
-                "Enter recipient email address: "
-            ).strip()
-
-            if not recipient or "@" not in recipient:
+            # Check for placeholders before sending
+            """placeholders = _find_placeholders(cold_email)
+            if placeholders:
                 console.print(
-                    "[red]Invalid email address. Try again.[/red]"
+                    f"\n[bold yellow]⚠ Unresolved "
+                    f"placeholders:[/bold yellow]"
                 )
-                continue
+                for p in placeholders:
+                    console.print(f"  [yellow]• {p}[/yellow]")
+                console.print(
+                    "\n[dim]Give feedback to fix these "
+                    "before sending.[/dim]\n"
+                )
+                fix = input(
+                    "Fix with feedback (F) or send anyway (Y)?: "
+                ).strip().upper()
+                if fix != "Y":
+                    choice = "F"
+                    feedback = (
+                        f"Replace these placeholders with real "
+                        f"content: {', '.join(placeholders)}"
+                    )
+                    # Fall through to regeneration below
+                else:
+                    pass  # Send anyway"""
 
-            console.print(
-                f"\n[green]✓ Approved![/green] "
-                f"Ready to send to [bold]{recipient}[/bold]"
-            )
-            return {
-                **state,
-                "email_approved":    True,
-                "email_recipient":   recipient,
-                "email_sent":        False,
-                "current_step":      "human_feedback_loop",
-            }
+            if choice == "A":
+                console.print()
+                recipient = input(
+                    "Enter recipient email: "
+                ).strip()
 
-        elif choice == "F":
-            # ── Get feedback ───────────────────────────────────
+                if not recipient or "@" not in recipient:
+                    console.print(
+                        "[red]Invalid email. Try again.[/red]"
+                    )
+                    continue
+
+                console.print(
+                    f"\n[green]✓ Ready to send to "
+                    f"[bold]{recipient}[/bold][/green]"
+                )
+                return {
+                    **state,
+                    "cold_email":       cold_email,
+                    "email_approved":   True,
+                    "email_recipient":  recipient,
+                    "email_sent":       False,
+                    "current_step":     "human_feedback_loop",
+                }
+
+        # ── Feedback → Regenerate ──────────────────────────────
+        if choice == "F":
             console.print(
-                "\n[dim]Examples:[/dim]\n"
-                "  [dim]'Make it more casual and human'[/dim]\n"
-                "  [dim]'Remove the location mention'[/dim]\n"
-                "  [dim]'Make it shorter — under 50 words'[/dim]\n"
-                "  [dim]'Change tone to be more confident'[/dim]\n"
+                "\n[dim]Examples of good feedback:[/dim]\n"
+                "  'Make it more casual — less corporate'\n"
+                "  'Shorter — max 60 words'\n"
+                "  'More confident opening line'\n"
+                "  'Remove the location mention'\n"
+                "  'Change my name to Chandan'\n"
             )
-            feedback = input("Your feedback: ").strip()
+
+            # Use auto-generated feedback if placeholders triggered it
+            if 'feedback' not in locals():
+                feedback = input("Your feedback: ").strip()
 
             if not feedback:
                 console.print(
                     "[yellow]No feedback entered. "
                     "Try again.[/yellow]"
                 )
+                if 'feedback' in locals():
+                    del feedback
                 continue
 
-            # ── Regenerate with feedback ───────────────────────
             console.print(
-                f"\n[bold cyan]Regenerating with your feedback...[/bold cyan]"
+                "\n[bold cyan]Regenerating...[/bold cyan]"
             )
+
+            company_context = "\n".join(filter(None, [
+                intelligence.get("company_summary", ""),
+                intelligence.get("cold_email_context", ""),
+            ])) or "No additional context."
 
             llm   = get_llm(temperature=0.3)
             chain = EMAIL_REGENERATION_PROMPT | llm
 
             try:
-                company_intelligence = state.get(
-                    "company_intelligence", {}
-                )
-                company_context = company_intelligence.get(
-                    "cold_email_context", ""
-                ) or company_intelligence.get("company_summary", "")
-
                 response = chain.invoke({
                     "current_email":   cold_email,
                     "feedback":        feedback,
@@ -638,47 +813,32 @@ def human_feedback_loop(state: AgentState) -> AgentState:
                     "company_context": company_context,
                 })
 
-                new_email = response.content.strip()
-                new_version = version + 1
+                cold_email = response.content.strip()
+                version   += 1
 
-                console.print("\n" + "═" * 60)
-                console.print(
-                    f"[bold cyan]VERSION {new_version} "
-                    f"— Updated[/bold cyan]"
-                )
-                console.print("═" * 60 + "\n")
-                console.print(new_email)
-                console.print("\n" + "─" * 60)
+                # Clean up local feedback variable for next round
+                if 'feedback' in locals():
+                    del feedback
 
-                # Update state and loop again
+                show_email(cold_email, version)
+
+                # Update state for this round
                 state = {
                     **state,
-                    "cold_email":    new_email,
-                    "email_version": new_version,
-                    "email_feedback": feedback,
+                    "cold_email":    cold_email,
+                    "email_version": version,
                 }
-
-                # Ask again after regeneration
-                console.print(
-                    "\n[bold]YOUR OPTIONS:[/bold]\n"
-                    "  [A] Approve and send this email\n"
-                    "  [F] Give more feedback\n"
-                    "  [S] Skip sending — save draft only\n"
-                )
 
             except Exception as e:
                 console.print(
-                    f"[red]Regeneration failed: {str(e)}[/red]\n"
-                    f"Keeping current version."
+                    f"[red]Regeneration failed: {str(e)}[/red]"
                 )
 
         else:
-            console.print(
-                "[yellow]Invalid choice. "
-                "Please enter A, F, or S.[/yellow]"
-            )
-
-
+            if choice not in ("A", "F", "S"):
+                console.print(
+                    "[yellow]Please enter A, F, or S.[/yellow]"
+                )
 # ── Node 8: Gmail Sender ───────────────────────────────────────
 
 def gmail_sender(state: AgentState) -> AgentState:
