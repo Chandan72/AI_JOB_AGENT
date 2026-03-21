@@ -69,24 +69,34 @@ SEARCH_QUERY_PROMPT = ChatPromptTemplate.from_messages([
 how to find the right jobs for a candidate. Generate search
 queries that will find the most relevant job listings."""),
 
-    ("human", """Generate 10 targeted job search queries for
-this candidate that will find the best matching roles.
+    ("human", """Generate 10 targeted search queries to find
+INDIVIDUAL job postings (not listing pages) for this candidate.
 
 CANDIDATE PROFILE:
 {profile}
 
-Generate queries that:
-1. Target their exact role level and specialisation
-2. Mix broad and specific queries
-3. Cover different job board naming conventions
-4. Include location-specific queries
-5. Include remote options
+Rules for queries:
+1. Each query must find a SINGLE job posting page
+2. Target their exact seniority level explicitly
+3. Include startup-specific terms (seed, series A, YC, funded)
+4. Mix role titles with specific skills
+5. Keep queries under 8 words each
+6. Focus on roles matching their experience level
 
-Return ONLY a JSON array of 10 query strings.
-Example: ["Senior Data Scientist LangChain India",
-          "ML Engineer LLM production remote"]
+Examples of GOOD queries (find individual postings):
+  "Data Scientist LangChain startup 2025"
+  "ML Engineer RAG production India remote"
+  "AI Engineer LangGraph YC startup"
+  "NLP Engineer HuggingFace Series A"
+  "Generative AI Engineer startup India"
 
-No markdown. No explanation. Just the JSON array.""")
+Examples of BAD queries (find listing pages):
+  "data scientist jobs"         ← too broad
+  "best AI companies hiring"    ← finds lists
+  "top machine learning jobs"   ← finds aggregators
+
+Return ONLY a JSON array of exactly 10 query strings.
+No markdown. No explanation.""")
 ])
 
 

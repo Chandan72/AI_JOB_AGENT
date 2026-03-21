@@ -1,0 +1,100 @@
+{
+  "name": "Chandan .",
+  "email": "chandan72090@gmail.com",
+  "phone": "+917209062108",
+  "location": "Noida",
+  "current_title": "Data Scientist",
+  "years_experience": 1,
+  "summary": "As a passionate AI and Machine Learning Engineer, I specialize in transforming complex research concepts into tangible business value. My expertise covers the complete development of cutting-edge AI systems, with a deep focus on creating foundational Generative AI models (LLMs, Diffusion Models). I have a proven track record of operationalizing advanced techniques like Retrieval-Augmented Generation (RAG) to develop production-grade solutions. Leading high-impact initiatives.",
+  "skills": [
+    "Python",
+    "SQL",
+    "Java",
+    "JavaScript",
+    "TypeScript",
+    "Go",
+    "Linear Regression",
+    "Logistic Regression",
+    "SVM",
+    "Decision Trees",
+    "Random Forest",
+    "Bagging",
+    "Boosting",
+    "XGBoost",
+    "PCA",
+    "K-Means",
+    "DBSCAN",
+    "CNN",
+    "RNN",
+    "LSTM",
+    "Transformer Architecture",
+    "Attention Mechanisms",
+    "Fine-tuning",
+    "LoRA",
+    "PEFT",
+    "TensorFlow",
+    "PyTorch",
+    "Scikit-learn",
+    "HuggingFace Transformers",
+    "spaCy",
+    "LangChain",
+    "LangGraph",
+    "RAG",
+    "Prompt Engineering",
+    "OpenAI API",
+    "Ollama",
+    "MLflow",
+    "FastAPI",
+    "Docker",
+    "Kubernetes",
+    "GitHub Actions",
+    "Pydantic",
+    "ChromaDB",
+    "Pinecone",
+    "FAISS",
+    "NoSQL",
+    "Hypothesis Testing",
+    "A/B Testing",
+    "Time-Series Analysis",
+    "Tweedie Regression",
+    "Cross-Validation",
+    "Natural Language Processing",
+    "Diffusion Models"
+  ],
+  "experience": [
+    {
+      "company": "Valiance Solutions",
+      "title": "Data Scientist",
+      "duration": "09/2025 \u2013 03/2026",
+      "description": "Developed high-accuracy document classification models and Agentic RAG systems, reducing manual processing and query response times. Automated ML pipelines with MLflow for improved scalability."
+    },
+    {
+      "company": "Kalolwala & Associates Private Limited",
+      "title": "AI Developer",
+      "duration": "06/2025 \u2013 09/2025",
+      "description": "Built NLP pipelines using spaCy and Transformers for financial report analysis, implementing sentiment analysis and topic modeling with real-time metrics."
+    },
+    {
+      "company": "ByteLearn.com",
+      "title": "Data Science Intern",
+      "duration": "04/2024 \u2013 06/2024",
+      "description": "Developed an automated visualization dashboard for employee performance tracking using Streamlit and Matplotlib, enhancing efficiency by 17% and job satisfaction by 21%."
+    }
+  ],
+  "education": [
+    {
+      "institution": "Indian Institute of Technology Kharagpur",
+      "degree": "Dual Degree B.Tech + M.Tech",
+      "year": "2025"
+    }
+  ],
+  "target_roles": [
+    "AI Engineer",
+    "ML Engineer"
+  ],
+  "target_locations": [
+    "Noida",
+    "Remote"
+  ],
+  "min_salary": ""
+}
