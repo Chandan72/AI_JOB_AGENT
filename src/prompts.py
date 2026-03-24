@@ -1,7 +1,7 @@
 from langchain_core.prompts import ChatPromptTemplate
 from langsmith import Client
 import os
-client=Client(api_url="https://api.smith.langchain.com", api_key=os.getenv("LANGSMITH_API_KEY"))
+client=Client(api_url="https://api.smith.langchain.com", api_key=os.getenv("LANGCHAIN_API_KEY"))
 JOB_EXTRACTION_PROMPT=client.pull_prompt("job_extraction",include_model=False)
 RESUME_GENERATION_PROMPT=client.pull_prompt("resume_generator", include_model=False)
 COVER_LETTER_PROMPT=client.pull_prompt("cover_letter", include_model=False)
