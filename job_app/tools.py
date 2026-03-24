@@ -5,7 +5,7 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
-from src.config import Config
+from job_app.config import Config
 
 JOB_CONTENT_SELECTORS = [
     # Greenhouse

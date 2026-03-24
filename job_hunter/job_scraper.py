@@ -1,5 +1,5 @@
 """
-job_scraper.py — Multi-Platform Job Scraper
+— Multi-Platform Job Scraper
 ─────────────────────────────────────────────
 Searches Wellfound and YC Jobs for individual job postings.
 Each result must be a single specific job — not an aggregated
@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from datetime import datetime
 from tavily import TavilyClient
-from src.config import Config
+from Job_app.config import Config
 
 
 # ── Platform configs ───────────────────────────────────────────
@@ -77,7 +77,7 @@ def scrape_jobs(
             try:
                 results = client.search(
                     query=search_term,
-                    search_depth="advanced",
+                    search_depth="basics",
                     max_results=max_results_per_query,
                 )
 

@@ -17,7 +17,7 @@ import re
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-from src.config import Config
+from job_app.config import Config
 
 
 # Gmail SMTP settings — these never change

@@ -1,5 +1,5 @@
 """
-profile_parser.py — Resume + LinkedIn PDF Parser
+ — Resume + LinkedIn PDF Parser
 ──────────────────────────────────────────────────
 Extracts structured candidate data from:
   1. Resume PDF (any format)
@@ -16,7 +16,7 @@ from pathlib import Path
 import pdfplumber
 from langchain_core.prompts import ChatPromptTemplate
 
-from src.config import get_llm
+from job_app.config import get_llm
 
 
 PROFILE_EXTRACTION_PROMPT = ChatPromptTemplate.from_messages([

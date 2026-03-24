@@ -32,7 +32,7 @@ from job_hunter.digest_generator import (
     save_digest_to_file,
     send_digest_email,
 )
-from src.config import Config
+from job_app.config import Config
 
 console = Console()
 

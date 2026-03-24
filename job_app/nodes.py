@@ -7,10 +7,10 @@ from pathlib import Path
 from rich.console import Console
 from rich.panel import Panel
 
-from src.state import AgentState
-from src.config import Config, get_llm, get_llm_for_task
-from src.tools import fetch_job_posting, detect_input_type
-from src.prompts import (
+from job_app.state import AgentState
+from job_app.config import Config, get_llm, get_llm_for_task
+from job_app.tools import fetch_job_posting, detect_input_type
+from job_app.prompts import (
     JOB_EXTRACTION_PROMPT,
     ATS_EXPERT_PROMPT,
     COVER_LETTER_PROMPT,
@@ -19,9 +19,9 @@ from src.prompts import (
     COMPANY_RESEARCH_PROMPT,
     EMAIL_REGENERATION_PROMPT,
 )
-from src.pdf_generator import generate_resume_pdf
-from src.email_sender import send_email
-from src.cache import cache_get, cache_set
+from job_app.pdf_generator import generate_resume_pdf
+from job_app.email_sender import send_email
+from job_app.cache import cache_get, cache_set
 console = Console()
 
 

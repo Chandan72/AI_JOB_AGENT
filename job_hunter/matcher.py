@@ -1,5 +1,5 @@
 """
-matcher.py — Semantic Job Matching Engine
+— Semantic Job Matching Engine
 ──────────────────────────────────────────
 Two-stage matching pipeline:
   Stage 1: Keyword pre-filter — fast, eliminates clearly wrong jobs
@@ -13,7 +13,7 @@ import json
 import re
 import numpy as np
 from langchain_core.prompts import ChatPromptTemplate
-from src.config import get_llm
+from job_app.config import get_llm
 
 
 MATCH_REASON_PROMPT = ChatPromptTemplate.from_messages([

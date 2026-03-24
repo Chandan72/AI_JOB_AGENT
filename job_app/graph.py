@@ -1,6 +1,6 @@
 from langgraph.graph import StateGraph, END, START
-from src.state import AgentState
-from src.nodes import (
+from job_app.state import AgentState
+from job_app.nodes import (
     router,
     job_fetcher,
     job_extractor,
