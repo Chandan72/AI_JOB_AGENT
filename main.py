@@ -89,7 +89,7 @@ def run(
     console.print(Rule(style="dim"))
 
     # ── Run the graph ──────────────────────────────────────────
-    from src.graph import job_application_graph
+    from job_app.graph import job_application_graph
 
     initial_state = {
         "job_input": job_input,
