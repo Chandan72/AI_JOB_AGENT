@@ -40,53 +40,41 @@ def _load_profile(profile_path: str) -> dict:
 
 @app.command()
 def run(
-    url: str = typer.Option(
-        None,
-        "--url",
-        "-u",
-        help="URL of the job posting",
-    ),
     jd: str = typer.Option(
         None,
-        "--jd",
-        "-j",
-        help="Raw job description text — use quotes around it",
+        "--jd", "-j",
+        help="Paste the full job description text in quotes",
     ),
     profile: str = typer.Option(
         "sample_profile.json",
-        "--profile",
-        "-p",
+        "--profile", "-p",
         help="Path to your candidate profile JSON",
     ),
     output: str = typer.Option(
         "./outputs",
-        "--output",
-        "-o",
+        "--output", "-o",
         help="Directory to save generated files",
     ),
-    verbose: bool = typer.Option(
+     verbose: bool = typer.Option(
         False,
-        "--verbose",
-        "-v",
+        "--verbose", "-v",
         help="Print all generated content in terminal",
     ),
-) -> None:
+):
     """
-    Run the full AI job application pipeline.
-    Provide either --url or --jd to get started.
+    Generate tailored resume, cover letter and cold email.
+    Paste the full job description using --jd.
     """
     _print_banner()
 
-    # ── Validate input ─────────────────────────────────────────
-    if not url and not jd:
-        console.print("[bold red]✗ Provide either --url or --jd[/bold red]")
+    if not jd:
+        console.print("[bold red]✗ Paste a job description using --jd[/bold red]")
         console.print()
-        console.print("  [dim]Examples:[/dim]")
-        console.print("  python main.py --url 'https://jobs.lever.co/stripe/...'")
-        console.print("  python main.py --jd 'Senior PM at Stripe. We are looking for...'")
+        console.print("  [dim]Example:[/dim]")
+        console.print("  python main.py --jd 'Senior Data Scientist at Stripe...")
         raise typer.Exit(1)
 
-    job_input = url if url else jd
+    job_input = jd
 
     # ── Load profile ───────────────────────────────────────────
     console.print(f"[dim]Loading profile:[/dim] {profile}")

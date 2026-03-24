@@ -68,6 +68,10 @@ async def _run_pipeline_task(request: PipelineRequest):
             }
             return
 
+        email_target_type = (request.email_target_type or "auto").strip()
+        if email_target_type not in ("auto", "Recruiter", "Hiring Manager", "skip"):
+            email_target_type = "auto"
+
         initial_state = {
             "job_input":    job_input,
             "user_profile": user_profile,
@@ -75,7 +79,10 @@ async def _run_pipeline_task(request: PipelineRequest):
             "current_step": "init",
             "error":        None,
             
-            "email_target_type": "skip",   # skips human_feedback_loop
+            # In web/API mode we never want to block on stdin.
+            # "auto" will resolve to recruiter/hiring-manager based on extracted fields.
+            "email_target_type": email_target_type,
+            "skip_human_feedback_loop": True,
             "email_approved":    False,
             "email_sent":        False,
             "email_version":     1,
@@ -92,6 +99,7 @@ async def _run_pipeline_task(request: PipelineRequest):
             }
             return
 
+        ats_report = final.get("ats_report", {}) or {}
         _pipeline_results = {
             "running":         False,
             "success":         True,
@@ -100,6 +108,9 @@ async def _run_pipeline_task(request: PipelineRequest):
             "cold_email":      final.get("cold_email", ""),
             "resume_pdf_path": final.get("resume_pdf_path", ""),
             "job_details":     final.get("job_details", {}),
+            "ats_report":      ats_report,
+            "ats_score_current": ats_report.get("ats_score_current", None),
+            "ats_score_potential": ats_report.get("ats_score_potential", None),
             "message":         "Application package ready",
             "progress":        "Complete",
         }

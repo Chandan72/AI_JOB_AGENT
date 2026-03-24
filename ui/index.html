@@ -426,6 +426,15 @@
         <div class="card" style="margin-bottom:16px;">
           <label>Job URL or paste job description</label>
           <textarea id="apply-input" rows="5" placeholder="https://wellfound.com/jobs/... or paste the full job description here"></textarea>
+          <div style="margin-top:12px;">
+            <label style="margin-bottom:6px;">Cold email target</label>
+            <select id="apply-email-target" style="font-size:13px;">
+              <option value="auto" selected>Auto</option>
+              <option value="Recruiter">Recruiter</option>
+              <option value="Hiring Manager">Hiring Manager</option>
+              <option value="skip">Skip cold email</option>
+            </select>
+          </div>
           <div style="display:flex;gap:10px;margin-top:12px;">
             <button class="btn btn-primary" style="flex:1;" onclick="runPipeline()">
               Generate resume + cover letter + email ↗
@@ -442,15 +451,69 @@
           <div class="gen-tabs">
             <div class="gen-tab active" onclick="showGenTab('resume',this)">Resume</div>
             <div class="gen-tab" onclick="showGenTab('cover',this)">Cover Letter</div>
+            <div class="gen-tab" onclick="showGenTab('ats',this)">ATS Report</div>
             <div class="gen-tab" onclick="showGenTab('email',this)">Cold Email</div>
           </div>
           <div id="gen-resume" class="gen-content"></div>
           <div id="gen-cover" class="gen-content hidden"></div>
+          <div id="gen-ats" class="gen-content hidden"></div>
           <div id="gen-email" class="gen-content hidden"></div>
           <div style="display:flex;gap:8px;margin-top:12px;">
             <button class="btn btn-sm" onclick="copyContent()">Copy</button>
             <a id="pdf-download-link" class="btn btn-sm btn-primary hidden" href="#" target="_blank">Download PDF ↗</a>
           </div>
+        </div>
+
+        <div id="apply-email-controls" class="card hidden" style="margin-top:16px;">
+          <div style="font-size:12px;font-weight:500;margin-bottom:10px;">Refine this email</div>
+
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">
+            Version <span id="apply-email-version-num">1</span>
+          </div>
+
+          <div style="margin-bottom:10px;">
+            <label>Your feedback</label>
+            <textarea id="apply-email-feedback-input" rows="2"
+              placeholder="e.g. Make it more casual, under 60 words, remove location..."
+              style="font-size:12px;"></textarea>
+          </div>
+
+          <button class="btn btn-sm" style="width:100%;margin-bottom:10px;"
+            onclick="submitEmailFeedbackApply()">
+            Regenerate with feedback ↗
+          </button>
+
+          <div id="apply-email-regen-progress" class="hidden"
+            style="margin-bottom:10px;">
+            <div class="progress">
+              <div class="progress-fill" id="apply-regen-bar"
+                style="width:30%;background:var(--amber);
+                animation: indeterminate 1.5s infinite;">
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">
+              Regenerating...
+            </div>
+          </div>
+
+          <hr style="border:none;border-top:1px solid var(--border);margin:10px 0;">
+
+          <div style="font-size:12px;font-weight:500;margin-bottom:8px;">Send this email</div>
+
+          <div style="margin-bottom:8px;">
+            <label>Recipient email address</label>
+            <input id="apply-email-recipient-input" type="email"
+              placeholder="recruiter@company.com or hiring.manager@company.com"
+              style="font-size:12px;">
+          </div>
+
+          <button class="btn btn-primary btn-sm" style="width:100%;"
+            onclick="approveAndSendEmailApply()">
+            Approve and send ↗
+          </button>
+
+          <div id="apply-email-send-status" class="hidden"
+            style="margin-top:8px;font-size:12px;text-align:center;"></div>
         </div>
       </div>
     </div>
@@ -704,6 +767,15 @@ function renderDetail(job) {
       </div>
   
       <div class="detail-actions">
+        <div style="margin-bottom:10px;">
+          <label style="margin-bottom:6px;">Cold email target</label>
+          <select id="detail-email-target" style="font-size:13px;">
+            <option value="auto" selected>Auto</option>
+            <option value="Recruiter">Recruiter</option>
+            <option value="Hiring Manager">Hiring Manager</option>
+            <option value="skip">Skip cold email</option>
+          </select>
+        </div>
         <button class="btn btn-primary" onclick="applyToJob()">
           Generate resume + cover letter + email ↗
         </button>
@@ -787,10 +859,13 @@ function renderDetail(job) {
           <div class="gen-tab"
             onclick="showDetTab('cover',this)">Cover Letter</div>
           <div class="gen-tab"
+            onclick="showDetTab('ats',this)">ATS Report</div>
+          <div class="gen-tab"
             onclick="showDetTab('email',this)">Cold Email</div>
         </div>
         <div id="det-resume" class="gen-content"></div>
         <div id="det-cover" class="gen-content hidden"></div>
+        <div id="det-ats" class="gen-content hidden"></div>
         <div id="det-email" class="gen-content hidden"></div>
   
         <!-- Cold email feedback UI -->
@@ -868,7 +943,8 @@ function applyToJob() {
   if (!selectedJob) return;
   document.getElementById('detail-pipeline-progress').classList.remove('hidden');
   document.getElementById('detail-gen-area').classList.add('hidden');
-  startPipeline(selectedJob.url || selectedJob.description || '');
+  const emailTarget = document.getElementById('detail-email-target')?.value || 'auto';
+  startPipeline(selectedJob.url || selectedJob.description || '', emailTarget);
 }
 
 function draftColdEmail() {
@@ -879,9 +955,10 @@ function draftColdEmail() {
 }
 
 // ── Application Pipeline ──────────────────────────────────────
-async function startPipeline(jobInput) {
+async function startPipeline(jobInput, emailTargetType = 'auto') {
   const body = { job_url: jobInput.startsWith('http') ? jobInput : '',
-                 job_description: jobInput.startsWith('http') ? '' : jobInput };
+                 job_description: jobInput.startsWith('http') ? '' : jobInput,
+                 email_target_type: emailTargetType };
 
   await fetch(`${API}/api/pipeline/generate`, {
     method: 'POST',
@@ -926,10 +1003,14 @@ async function startPipeline(jobInput) {
 }
 
 function showDetailGenerated(data) {
+    pipelineResults = data;
     document.getElementById('detail-gen-area').classList.remove('hidden');
     document.getElementById('det-resume').textContent  = data.resume || '';
     document.getElementById('det-cover').textContent   = data.cover_letter || '';
     document.getElementById('det-email').textContent   = data.cold_email || '';
+
+    const atsEl = document.getElementById('det-ats');
+    if (atsEl) atsEl.innerHTML = renderAtsReport(data.ats_report || {});
   
     // Show email feedback UI in cold email tab
     const feedbackUI = document.getElementById('email-feedback-ui');
@@ -947,7 +1028,7 @@ function showDetailGenerated(data) {
   }
   
   function showDetTab(tab, el) {
-    ['resume','cover','email'].forEach(t => {
+    ['resume','cover','ats','email'].forEach(t => {
       const el2 = document.getElementById('det-' + t);
       if (el2) el2.classList.add('hidden');
     });
@@ -989,7 +1070,7 @@ function showDetailGenerated(data) {
         body: JSON.stringify({
           current_email: currentEmail,
           feedback:      feedback,
-          company_name:  selectedJob?.company || '',
+          company_name:  pipelineResults?.job_details?.company_name || selectedJob?.company || '',
         }),
       });
   
@@ -1074,12 +1155,112 @@ function showDetailGenerated(data) {
       sendBtn.textContent  = 'Approve and send ↗';
     }
   }
+
+  async function submitEmailFeedbackApply() {
+    const feedback = document.getElementById('apply-email-feedback-input').value.trim();
+    if (!feedback) { toast('Enter feedback first'); return; }
+
+    const currentEmail = document.getElementById('gen-email').textContent;
+    if (!currentEmail) { toast('No email to refine'); return; }
+
+    document.getElementById('apply-email-regen-progress').classList.remove('hidden');
+    const regenBtn = document.querySelector('[onclick="submitEmailFeedbackApply()"]');
+    if (regenBtn) regenBtn.disabled = true;
+
+    try {
+      const res = await fetch(`${API}/api/pipeline/refine-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          current_email: currentEmail,
+          feedback: feedback,
+          company_name: pipelineResults?.job_details?.company_name || '',
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('gen-email').textContent = data.cold_email || '';
+        const versionEl = document.getElementById('apply-email-version-num');
+        if (versionEl) versionEl.textContent = parseInt(versionEl.textContent) + 1;
+        document.getElementById('apply-email-feedback-input').value = '';
+        toast('Email updated — version ' + (document.getElementById('apply-email-version-num')?.textContent || ''));
+      } else {
+        toast('Refinement failed: ' + data.message);
+      }
+    } catch (e) {
+      toast('Error: ' + e.message);
+    } finally {
+      document.getElementById('apply-email-regen-progress').classList.add('hidden');
+      if (regenBtn) regenBtn.disabled = false;
+    }
+  }
+
+  async function approveAndSendEmailApply() {
+    const recipient = document.getElementById('apply-email-recipient-input').value.trim();
+    if (!recipient || !recipient.includes('@')) {
+      toast('Enter a valid recipient email'); return;
+    }
+
+    const emailContent = document.getElementById('gen-email').textContent;
+    if (!emailContent) { toast('No email to send'); return; }
+
+    const sendBtn = document.querySelector('[onclick="approveAndSendEmailApply()"]');
+    if (sendBtn) {
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending...';
+    }
+
+    const statusEl = document.getElementById('apply-email-send-status');
+
+    try {
+      const res = await fetch(`${API}/api/pipeline/send-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipient_email: recipient,
+          email_content: emailContent,
+          sender_name: document.getElementById('profile-name')?.textContent || 'Job Applicant',
+        }),
+      });
+
+      const data = await res.json();
+      statusEl.classList.remove('hidden');
+
+      if (data.success) {
+        statusEl.style.color = 'var(--green)';
+        statusEl.textContent = '✓ Email sent to ' + recipient;
+        if (sendBtn) {
+          sendBtn.textContent = '✓ Sent!';
+          sendBtn.style.background = 'var(--green)';
+        }
+        toast('Email sent successfully!');
+      } else {
+        statusEl.style.color = '#dc2626';
+        statusEl.textContent = '✗ Failed: ' + data.message;
+        if (sendBtn) {
+          sendBtn.disabled = false;
+          sendBtn.textContent = 'Approve and send ↗';
+        }
+      }
+    } catch (e) {
+      statusEl.classList.remove('hidden');
+      statusEl.style.color = '#dc2626';
+      statusEl.textContent = '✗ Error: ' + e.message;
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Approve and send ↗';
+      }
+    }
+  }
+
 function showGenTab(tab, el) {
-  ['resume','cover','email'].forEach(t => {
-    const el2 = document.getElementById('det-' + (t === 'resume' ? 'resume' : t === 'cover' ? 'cover' : 'email'));
+  ['resume','cover','ats','email'].forEach(t => {
+    const el2 = document.getElementById('gen-' + t);
     if (el2) el2.classList.add('hidden');
   });
-  document.getElementById('det-' + tab).classList.remove('hidden');
+  const target = document.getElementById('gen-' + tab);
+  if (target) target.classList.remove('hidden');
   el.closest('.gen-tabs').querySelectorAll('.gen-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   activeGenTab = tab;
@@ -1092,9 +1273,22 @@ async function runPipeline() {
 
   document.getElementById('apply-progress').classList.remove('hidden');
   document.getElementById('apply-results').classList.add('hidden');
+  const controls = document.getElementById('apply-email-controls');
+  if (controls) controls.classList.add('hidden');
+  const versionEl = document.getElementById('apply-email-version-num');
+  if (versionEl) versionEl.textContent = '1';
+  const regenProgress = document.getElementById('apply-email-regen-progress');
+  if (regenProgress) regenProgress.classList.add('hidden');
+  const sendStatusEl = document.getElementById('apply-email-send-status');
+  if (sendStatusEl) { sendStatusEl.classList.add('hidden'); sendStatusEl.textContent = ''; }
+  const feedbackInput = document.getElementById('apply-email-feedback-input');
+  if (feedbackInput) feedbackInput.value = '';
+
+  const emailTarget = document.getElementById('apply-email-target')?.value || 'auto';
 
   const body = { job_url: input.startsWith('http') ? input : '',
-                 job_description: input.startsWith('http') ? '' : input };
+                 job_description: input.startsWith('http') ? '' : input,
+                 email_target_type: emailTarget };
 
   await fetch(`${API}/api/pipeline/generate`, {
     method: 'POST',
@@ -1122,7 +1316,14 @@ async function runPipeline() {
         document.getElementById('gen-resume').textContent = data.resume || '';
         document.getElementById('gen-cover').textContent = data.cover_letter || '';
         document.getElementById('gen-email').textContent = data.cold_email || '';
+        document.getElementById('gen-ats').innerHTML = renderAtsReport(data.ats_report || {});
         document.getElementById('apply-results').classList.remove('hidden');
+        if (controls) {
+          if (data.cold_email) controls.classList.remove('hidden');
+          else controls.classList.add('hidden');
+        }
+        if (regenProgress) regenProgress.classList.add('hidden');
+        if (sendStatusEl) { sendStatusEl.classList.add('hidden'); sendStatusEl.textContent = ''; }
         if (data.resume_pdf_path) {
           const link = document.getElementById('pdf-download-link');
           link.href = '/' + data.resume_pdf_path.replace('./', '');
@@ -1138,18 +1339,85 @@ async function runPipeline() {
 }
 
 // ── Helpers ───────────────────────────────────────────────────
+function escapeHtml(str) {
+  return (str ?? '').toString().replace(/[&<>"']/g, (m) => {
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]);
+  });
+}
+
+function renderAtsReport(ats) {
+  try {
+    if (!ats || !Object.keys(ats).length) {
+      return '<div style="color:var(--muted);font-size:12px;">No ATS report available.</div>';
+    }
+
+    const current = ats.ats_score_current ?? '—';
+    const potential = ats.ats_score_potential ?? '—';
+    const explanation = ats.score_explanation ? escapeHtml(ats.score_explanation) : '';
+    const summary = ats.summary ? escapeHtml(ats.summary) : '';
+    const onePower = ats.one_power_bullet ? escapeHtml(ats.one_power_bullet) : '';
+
+    const missing = (ats.missing_keywords || []).slice(0, 10).map(k => {
+      const kw = escapeHtml(k.keyword || '');
+      const pr = escapeHtml(k.priority || '');
+      const freq = k.frequency_in_jd ?? 1;
+      const where = escapeHtml(k.where_to_add || '');
+      return `<li><span style="font-weight:600;">${kw}</span> (${pr}) ×${freq} — <span style="color:var(--muted);">${where}</span></li>`;
+    }).join('');
+
+    return `
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="font-size:13px;font-weight:700;">
+          ATS Score: ${current}% → ${potential}%
+        </div>
+        ${explanation ? `<div style="font-size:12px;color:var(--muted);">${explanation}</div>` : ''}
+        ${missing ? `
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;">
+              Missing keywords
+            </div>
+            <ul style="margin-left:16px;line-height:1.6;font-size:12px;">${missing}</ul>
+          </div>
+        ` : ''}
+        ${onePower ? `
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;">
+              Power bullet to add
+            </div>
+            <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px;font-size:12px;white-space:pre-wrap;line-height:1.6;">
+              ${onePower}
+            </div>
+          </div>
+        ` : ''}
+        ${summary ? `
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;">
+              Summary
+            </div>
+            <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px;font-size:12px;white-space:pre-wrap;line-height:1.6;">
+              ${summary}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  } catch (e) {
+    return '<div style="color:var(--muted);font-size:12px;">ATS render error.</div>';
+  }
+}
+
 function copyText(text) {
   navigator.clipboard.writeText(text).then(() => toast('Copied!'));
 }
 
 function copyDetailContent() {
-  const map = { resume: 'det-resume', cover: 'det-cover', email: 'det-email' };
+  const map = { resume: 'det-resume', cover: 'det-cover', ats: 'det-ats', email: 'det-email' };
   const el = document.getElementById(map[activeGenTab]);
   if (el) navigator.clipboard.writeText(el.textContent).then(() => toast('Copied!'));
 }
 
 function copyContent() {
-  const map = { resume: 'gen-resume', cover: 'gen-cover', email: 'gen-email' };
+  const map = { resume: 'gen-resume', cover: 'gen-cover', ats: 'gen-ats', email: 'gen-email' };
   const el = document.getElementById(map[activeGenTab]);
   if (el) navigator.clipboard.writeText(el.textContent).then(() => toast('Copied!'));
 }

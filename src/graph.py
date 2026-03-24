@@ -5,13 +5,13 @@ from src.nodes import (
     job_fetcher,
     job_extractor,
     company_researcher,
-    resume_generator,
+    ats_expert,
     cover_letter_generator,
     email_intent_selector,
     cold_email_drafter,
     human_feedback_loop,
     gmail_sender,
-    pdf_resume_generator,
+    
     output_formatter,
 )
 
@@ -25,8 +25,7 @@ def _route_after_router(state: AgentState) -> str:
     """
     if state.get("error"):
         return "output_formatter"
-    if state.get("input_type") == "url":
-        return "job_fetcher"
+    
     return "job_extractor"
 
 
@@ -35,17 +34,17 @@ def build_graph():
 
     # ── Register all nodes ─────────────────────────────────────
     graph.add_node("router", router)
-    graph.add_node("job_fetcher", job_fetcher)
+    
     graph.add_node("job_extractor", job_extractor)
     graph.add_node("company_researcher", company_researcher)
-    graph.add_node("resume_generator", resume_generator)
+    graph.add_node("ats_expert", ats_expert)
     graph.add_node("cover_letter_generator", cover_letter_generator)
     graph.add_node("email_intent_selector", email_intent_selector)
     
     graph.add_node("cold_email_drafter", cold_email_drafter)
     graph.add_node("human_feedback_loop", human_feedback_loop)
     graph.add_node("gmail_sender", gmail_sender)
-    graph.add_node("pdf_resume_generator", pdf_resume_generator)
+    
     graph.add_node("output_formatter", output_formatter)
 
     # ── Entry point ────────────────────────────────────────────
@@ -56,25 +55,25 @@ def build_graph():
         "router",
         _route_after_router,
         {
-            "job_fetcher": "job_fetcher",
+            
             "job_extractor": "job_extractor",
             "output_formatter": "output_formatter",
         },
     )
 
     # ── job_fetcher always goes to job_extractor ───────────────
-    graph.add_edge("job_fetcher", "job_extractor")
+    
     graph.add_edge("job_extractor", "company_researcher")
 
     # ── Linear pipeline after extraction ──────────────────────
-    graph.add_edge("company_researcher", "resume_generator")
-    graph.add_edge("resume_generator", "cover_letter_generator")
+    graph.add_edge("company_researcher", "ats_expert")
+    graph.add_edge("ats_expert", "cover_letter_generator")
     graph.add_edge("cover_letter_generator", "email_intent_selector")
     graph.add_edge("email_intent_selector", "cold_email_drafter")
     graph.add_edge("cold_email_drafter", "human_feedback_loop")
     graph.add_edge("human_feedback_loop", "gmail_sender")
-    graph.add_edge("gmail_sender", "pdf_resume_generator")
-    graph.add_edge("pdf_resume_generator", "output_formatter")
+    graph.add_edge("gmail_sender", "output_formatter")
+    
 
     # ── End ────────────────────────────────────────────────────
     graph.add_edge("output_formatter", END)

@@ -33,10 +33,10 @@ class AgentState(TypedDict, total=False):
     raw_job_content: str
     job_details: JobDetails
     company_intelligence: dict
-    tailored_resume: str
+    ats_report: dict
     cover_letter: str
     cold_email: str
-    resume_pdf_path: str
+    
     error: Optional[str]
     current_step: str
     output_dir: str
@@ -49,5 +49,6 @@ class AgentState(TypedDict, total=False):
     email_version: int 
     email_target_type: str      # ← ADD: "Recruiter" / "Hiring Manager" / "skip"
     email_target_name: str
+    skip_human_feedback_loop: bool
 
 

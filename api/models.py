@@ -43,6 +43,7 @@ class PipelineRequest(BaseModel):
     company_name: Optional[str] = ""
     recruiter_email: Optional[str] = ""
     manager_email: Optional[str] = ""
+    email_target_type: Optional[str] = None
 
 
 class PipelineResponse(BaseModel):

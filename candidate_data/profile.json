@@ -1,11 +1,11 @@
 {
-  "name": "Chandan .",
-  "email": "chandan72090@gmail.com",
-  "phone": "+917209062108",
-  "location": "Noida",
-  "current_title": "Data Scientist",
-  "years_experience": 1,
-  "summary": "As a passionate AI and Machine Learning Engineer, I specialize in transforming complex research concepts into tangible business value. My expertise covers the complete development of cutting-edge AI systems, with a deep focus on creating foundational Generative AI models (LLMs, Diffusion Models). I have a proven track record of operationalizing advanced techniques like Retrieval-Augmented Generation (RAG) to develop production-grade solutions. Leading high-impact initiatives.",
+  "name": "ChandanKumar",
+  "email": "chandan875792@gmail.com",
+  "phone": "+91-7209062108",
+  "location": "Noida, India",
+  "current_title": "Data Science Intern",
+  "years_experience": 0,
+  "summary": "Data Scientist with production experience in NLP, deep learning, LLMs, and time-series forecasting. IIT Kharagpur alumnus skilled in feature engineering, statistical modeling, and generative AI. Delivered a demand forecasting engine achieving 95% Recall on surge detection, enterprise NLP pipelines reducing manual processing by 30%, and RAG systems with 92%+ answer faithfulness.",
   "skills": [
     "Python",
     "SQL",
@@ -20,7 +20,7 @@
     "Random Forest",
     "Bagging",
     "Boosting",
-    "XGBoost",
+    "XG Boost",
     "PCA",
     "K-Means",
     "DBSCAN",
@@ -29,14 +29,13 @@
     "LSTM",
     "Transformer Architecture",
     "Attention Mechanisms",
-    "Fine-tuning",
-    "LoRA",
-    "PEFT",
+    "Fine-tuning (LoRA, PEFT)",
     "TensorFlow",
     "PyTorch",
     "Scikit-learn",
     "HuggingFace Transformers",
     "spaCy",
+    "XGBoost",
     "LangChain",
     "LangGraph",
     "RAG",
@@ -52,33 +51,26 @@
     "ChromaDB",
     "Pinecone",
     "FAISS",
+    "SQL",
     "NoSQL",
     "Hypothesis Testing",
     "A/B Testing",
     "Time-Series Analysis",
     "Tweedie Regression",
-    "Cross-Validation",
-    "Natural Language Processing",
-    "Diffusion Models"
+    "Cross-Validation"
   ],
   "experience": [
     {
       "company": "Valiance Solutions",
-      "title": "Data Scientist",
-      "duration": "09/2025 \u2013 03/2026",
-      "description": "Developed high-accuracy document classification models and Agentic RAG systems, reducing manual processing and query response times. Automated ML pipelines with MLflow for improved scalability."
-    },
-    {
-      "company": "Kalolwala & Associates Private Limited",
-      "title": "AI Developer",
-      "duration": "06/2025 \u2013 09/2025",
-      "description": "Built NLP pipelines using spaCy and Transformers for financial report analysis, implementing sentiment analysis and topic modeling with real-time metrics."
-    },
-    {
-      "company": "ByteLearn.com",
       "title": "Data Science Intern",
-      "duration": "04/2024 \u2013 06/2024",
-      "description": "Developed an automated visualization dashboard for employee performance tracking using Streamlit and Matplotlib, enhancing efficiency by 17% and job satisfaction by 21%."
+      "duration": "09/2025 - 03/2026",
+      "description": "Developed TensorFlow document classification model achieving 90%+ accuracy on unstructured enterprise datasets, reducing manual review time by 30% across client workflows. Engineered enterprise Agentic RAG system for regulatory compliance Q&A using LLMs and vector retrieval; reduced average query response time by 40% in production. Automated end-to-end ML pipelines (labeling, training, inference) with MLflow tracking, improving workflow scalability and deployment repeatability."
+    },
+    {
+      "company": "Kalolwala & Associates",
+      "title": "AI Developer Intern",
+      "duration": "07/2025 - 09/2025",
+      "description": "Built spaCy and Transformer-based NLP pipelines to extract and summarize stakeholder insights from financial reports; implemented sentiment analysis and topic modeling with real-time audience engagement metrics."
     }
   ],
   "education": [
@@ -89,12 +81,11 @@
     }
   ],
   "target_roles": [
-    "AI Engineer",
-    "ML Engineer"
+    "Data Scientist",
+    "AI Developer"
   ],
   "target_locations": [
-    "Noida",
-    "Remote"
+    "Noida, India"
   ],
   "min_salary": ""
 }

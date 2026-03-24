@@ -8,11 +8,11 @@ from rich.console import Console
 from rich.panel import Panel
 
 from src.state import AgentState
-from src.config import Config, get_llm
+from src.config import Config, get_llm, get_llm_for_task
 from src.tools import fetch_job_posting, detect_input_type
 from src.prompts import (
     JOB_EXTRACTION_PROMPT,
-    RESUME_GENERATION_PROMPT,
+    ATS_EXPERT_PROMPT,
     COVER_LETTER_PROMPT,
     
     COLD_EMAIL_PROMPT,
@@ -21,6 +21,7 @@ from src.prompts import (
 )
 from src.pdf_generator import generate_resume_pdf
 from src.email_sender import send_email
+from src.cache import cache_get, cache_set
 console = Console()
 
 
@@ -106,7 +107,7 @@ def job_extractor(state: AgentState) -> AgentState:
             "current_step": "job_extractor"
         }
 
-    llm = get_llm(temperature=0.0)
+    llm = get_llm_for_task("extraction",0.0)
     chain = JOB_EXTRACTION_PROMPT | llm
 
     try:
@@ -176,6 +177,12 @@ def company_researcher(state: AgentState) -> AgentState:
             "company_intelligence": {},
             "current_step": "company_researcher",
         }
+        
+    cached= cache_get(f"company_{company_name}")
+    if cached:
+        console.print(f"   [dim]✓ Company intelligence cached[/dim]")
+        return {**state, "company_intelligence": cached}
+    
 
     # ── RETRIEVE — search for company intelligence ─────────────
     console.print(f"   Searching for: [bold]{company_name}[/bold]")
@@ -222,6 +229,7 @@ def company_researcher(state: AgentState) -> AgentState:
             f"   [green]✓ Retrieved {result_count} "
             f"research results[/green]"
         )
+        
 
     except Exception as e:
         # RAG failure is non-fatal — degrade gracefully
@@ -238,7 +246,7 @@ def company_researcher(state: AgentState) -> AgentState:
     # ── AUGMENT — structure raw results with LLM ───────────────
     console.print("   Analysing and structuring intelligence...")
 
-    llm   = get_llm(temperature=0.1)
+    llm   = get_llm_for_task("research", 0.1)
     chain = COMPANY_RESEARCH_PROMPT | llm
 
     try:
@@ -268,6 +276,8 @@ def company_researcher(state: AgentState) -> AgentState:
                 f"   [dim]Cover letter hook:[/dim] "
                 f"[italic]{hook[:80]}...[/italic]"
             )
+        
+        cache_set(f"company_{company_name}", company_intelligence)
 
         return {
             **state,
@@ -301,58 +311,139 @@ def company_researcher(state: AgentState) -> AgentState:
 
 # ── Node 4: Resume Generator ───────────────────────────────────
 
-def resume_generator(state: AgentState) -> AgentState:
-    console.print("\n[bold cyan]► Step 4/7:[/bold cyan] Generating tailored resume...")
+# ── Node 4: ATS Expert ─────────────────────────────────────────
+
+def ats_expert(state: AgentState) -> AgentState:
+    """
+    Replaces resume_generator.
+    Analyses the job description against the candidate profile
+    and returns a precise ATS optimisation report.
+
+    Low hallucination risk — analytical task at temperature 0.0.
+    Fast — single LLM call, structured JSON output.
+    Actionable — every suggestion traces to real profile data.
+    """
+    console.print(
+        "\n[bold cyan]► Step 4/7:[/bold cyan] "
+        "Running ATS analysis..."
+    )
 
     if state.get("error"):
         return state
 
-    job_details = state.get("job_details", {})
+    job_details  = state.get("job_details", {})
     user_profile = state.get("user_profile", {})
 
     if not user_profile:
         return {
             **state,
-            "error": "User profile is empty. Load a profile JSON first.",
-            "current_step": "resume_generator"
+            "error": "User profile is empty.",
+            "current_step": "ats_expert",
         }
 
-    llm = get_llm(temperature=0.2)
-    chain = RESUME_GENERATION_PROMPT | llm
+    # Build full JD text from structured job_details
+    jd_text = _build_jd_text(job_details)
+
+    llm   = get_llm_for_task("analysis", 0.0)   # zero temp — analytical task
+    chain = ATS_EXPERT_PROMPT | llm
 
     try:
         response = chain.invoke({
-            "user_profile": _format_profile(user_profile),
-            "company_name": _get_job_field(job_details, "company_name"),
-            "job_title": _get_job_field(job_details, "job_title"),
-            "required_skills": _get_job_field(job_details, "required_skills"),
-            "preferred_skills": _get_job_field(job_details, "preferred_skills"),
-            "responsibilities": _get_job_field(job_details, "responsibilities"),
-            "requirements": _get_job_field(job_details, "requirements"),
-            "tech_stack": _get_job_field(job_details, "tech_stack"),
-            "seniority_level": _get_job_field(job_details, "seniority_level"),
-            "company_context": state.get("company_intelligence", {}).get(
-        "relevance_to_role", "Not available"
-    ),
+            "job_description":   jd_text,
+            "candidate_profile": _format_profile(user_profile),
         })
 
-        resume_content = response.content.strip()
-        console.print(f"   [green]✓ Resume generated[/green]")
+        raw = response.content.strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+
+        ats_report = json.loads(raw)
+
+        current   = ats_report.get("ats_score_current", 0)
+        potential = ats_report.get("ats_score_potential", 0)
+
+        console.print(
+            f"   [green]✓ ATS Score: {current}% → {potential}% "
+            f"(+{potential - current}% potential)[/green]"
+        )
+
+        missing_critical = [
+            k for k in ats_report.get("missing_keywords", [])
+            if k.get("priority") == "critical"
+        ]
+        if missing_critical:
+            console.print(
+                f"   [yellow]⚠ {len(missing_critical)} critical "
+                f"keywords missing[/yellow]"
+            )
 
         return {
             **state,
-            "tailored_resume": resume_content,
-            "current_step": "resume_generator",
+            "ats_report":   ats_report,
+            "current_step": "ats_expert",
         }
 
+    except json.JSONDecodeError as e:
+        return {
+            **state,
+            "error": f"ATS analysis parse failed: {str(e)}",
+            "current_step": "ats_expert",
+        }
     except Exception as e:
         return {
             **state,
-            "error": f"Resume generation failed: {str(e)}",
-            "current_step": "resume_generator"
+            "error": f"ATS analysis failed: {str(e)}",
+            "current_step": "ats_expert",
         }
 
 
+def _build_jd_text(job_details: dict) -> str:
+    """
+    Reconstructs readable JD text from structured job_details dict.
+    Used as input to the ATS expert prompt.
+    """
+    parts = []
+
+    if job_details.get("job_title"):
+        parts.append(f"Role: {job_details['job_title']}")
+    if job_details.get("company_name"):
+        parts.append(f"Company: {job_details['company_name']}")
+    if job_details.get("about_company"):
+        parts.append(f"About: {job_details['about_company']}")
+    if job_details.get("responsibilities"):
+        resp = job_details["responsibilities"]
+        if isinstance(resp, list):
+            parts.append("Responsibilities:\n" +
+                         "\n".join(f"- {r}" for r in resp))
+        else:
+            parts.append(f"Responsibilities: {resp}")
+    if job_details.get("requirements"):
+        reqs = job_details["requirements"]
+        if isinstance(reqs, list):
+            parts.append("Requirements:\n" +
+                         "\n".join(f"- {r}" for r in reqs))
+        else:
+            parts.append(f"Requirements: {reqs}")
+    if job_details.get("required_skills"):
+        skills = job_details["required_skills"]
+        if isinstance(skills, list):
+            parts.append(f"Required Skills: {', '.join(skills)}")
+        else:
+            parts.append(f"Required Skills: {skills}")
+    if job_details.get("preferred_skills"):
+        pref = job_details["preferred_skills"]
+        if isinstance(pref, list):
+            parts.append(f"Preferred Skills: {', '.join(pref)}")
+    if job_details.get("tech_stack"):
+        tech = job_details["tech_stack"]
+        if isinstance(tech, list):
+            parts.append(f"Tech Stack: {', '.join(tech)}")
+    if job_details.get("seniority_level"):
+        parts.append(f"Seniority: {job_details['seniority_level']}")
+
+    return "\n\n".join(parts)
 # ── Node 5: Cover Letter Generator ────────────────────────────
 
 def cover_letter_generator(state: AgentState) -> AgentState:
@@ -364,7 +455,7 @@ def cover_letter_generator(state: AgentState) -> AgentState:
     job_details = state.get("job_details", {})
     user_profile = state.get("user_profile", {})
 
-    llm = get_llm(temperature=0.5)
+    llm = get_llm_for_task("generation",0.5)
     chain = COVER_LETTER_PROMPT | llm
 
     try:
@@ -425,6 +516,66 @@ def email_intent_selector(state: AgentState) -> AgentState:
     job_details = state.get("job_details", {})
     recruiter   = job_details.get("recruiter_name", "")
     hm          = job_details.get("hiring_manager_name", "")
+
+    # Non-interactive mode (API / web UI):
+    # If the caller already decided the target, we must not block on stdin.
+    explicit_target = state.get("email_target_type")
+    if explicit_target in ("Recruiter", "Hiring Manager", "skip", "auto"):
+        # Always print the detected role context for traceability.
+        console.print(
+            f"\n  Company: [bold]{job_details.get('company_name', 'Unknown')}[/bold]"
+        )
+        console.print(
+            f"  Role:    [bold]{job_details.get('job_title', 'Unknown')}[/bold]\n"
+        )
+
+        if recruiter:
+            console.print(f"  Recruiter found:        [green]{recruiter}[/green]")
+        else:
+            console.print("  Recruiter:              [dim]Unknown[/dim]")
+
+        if hm:
+            console.print(f"  Hiring Manager found:   [green]{hm}[/green]")
+        else:
+            console.print("  Hiring Manager:         [dim]Unknown[/dim]")
+
+        if explicit_target == "skip":
+            console.print("\n[dim]Cold email skipped by user.[/dim]")
+            return {
+                **state,
+                "email_target_type": "skip",
+                "email_target_name": "",
+                "current_step": "email_intent_selector",
+            }
+
+        # Resolve "auto" without asking the user.
+        if explicit_target == "auto":
+            if recruiter:
+                chosen_type = "Recruiter"
+                target_name = recruiter
+            elif hm:
+                chosen_type = "Hiring Manager"
+                target_name = hm
+            else:
+                # Fallback: still generate a recruiter-style email.
+                chosen_type = "Recruiter"
+                target_name = "the recruiter"
+        else:
+            chosen_type = explicit_target
+            if chosen_type == "Recruiter":
+                target_name = recruiter if recruiter else "the recruiter"
+            else:
+                target_name = hm if hm else "the hiring manager"
+
+        console.print(
+            f"\n[green]✓ Selected: {chosen_type} ({target_name})[/green]"
+        )
+        return {
+            **state,
+            "email_target_type": chosen_type,
+            "email_target_name": target_name,
+            "current_step": "email_intent_selector",
+        }
 
     console.print(
         f"\n  Company: [bold]"
@@ -536,7 +687,7 @@ def cold_email_drafter(state: AgentState) -> AgentState:
     target_type = state.get("email_target_type", "Recruiter")
     target_name = state.get("email_target_name", "")
 
-    llm   = get_llm(temperature=0.4)
+    llm   = get_llm_for_task("generation",0.5)
     chain = COLD_EMAIL_PROMPT | llm
 
     # Build company intelligence summary
@@ -659,6 +810,16 @@ def human_feedback_loop(state: AgentState) -> AgentState:
     """
     if state.get("error"):
         return state
+
+    # Web/API mode: do not block on terminal input.
+    # The frontend handles refine + sending via separate endpoints.
+    if state.get("skip_human_feedback_loop"):
+        return {
+            **state,
+            "email_approved": False,
+            "email_sent":     False,
+            "current_step":   "human_feedback_loop",
+        }
 
     # ── Skip if cold email was skipped ─────────────────────────
     if not state.get("cold_email"):
@@ -927,14 +1088,22 @@ def output_formatter(state: AgentState) -> AgentState:
     job_path.write_text(json.dumps(job_details, indent=2), encoding="utf-8")
     files_saved.append(("Job Details", str(job_path)))
 
-    # Save resume
-    resume_path = output_dir / f"{prefix}_resume.md"
-    resume_path.write_text(state.get("tailored_resume", ""), encoding="utf-8")
-    files_saved.append(("Tailored Resume", str(resume_path)))
+    # Save tailored resume
     
-    pdf_path = state.get("resume_pdf_path", "")
-    if pdf_path:
-        files_saved.append(("📄 Resume PDF", pdf_path))
+    # Optional ATS report (JSON + Markdown)
+    ats_report = state.get("ats_report", {})
+    if ats_report:
+        ats_path = output_dir / f"{prefix}_ats_report.json"
+        ats_path.write_text(
+            json.dumps(ats_report, indent=2), encoding="utf-8"
+        )
+        files_saved.append(("ATS Report", str(ats_path)))
+
+        ats_md_path = output_dir / f"{prefix}_ats_report.md"
+        ats_md_path.write_text(
+            _build_ats_markdown(ats_report), encoding="utf-8"
+        )
+        files_saved.append(("ATS Report (MD)", str(ats_md_path)))
 
     # Save cover letter
     cover_path = output_dir / f"{prefix}_cover_letter.md"
@@ -1036,3 +1205,44 @@ def _print_summary(state: AgentState, files_saved: list) -> None:
         border_style="green",
         padding=(1, 2),
     ))
+    
+def _build_ats_markdown(ats: dict) -> str:
+    """Builds readable Markdown from ATS report dict."""
+    lines = [
+        "# ATS Analysis Report",
+        f"**Current Score:** {ats.get('ats_score_current')}%",
+        f"**Potential Score:** {ats.get('ats_score_potential')}%",
+        f"**Assessment:** {ats.get('score_explanation', '')}",
+        "",
+        "## Expert Summary",
+        ats.get("summary", ""),
+        "",
+        "## Power Bullet to Add",
+        f"• {ats.get('one_power_bullet', '')}",
+        "",
+        "## Missing Keywords",
+    ]
+    for kw in ats.get("missing_keywords", []):
+        lines.append(
+            f"- **{kw['keyword']}** "
+            f"({kw.get('priority')}, "
+            f"×{kw.get('frequency_in_jd', 1)} in JD) → "
+            f"{kw.get('where_to_add', '')}"
+        )
+    lines += ["", "## Phrase Improvements"]
+    for imp in ats.get("keyword_improvements", []):
+        lines.append(
+            f"- ~~{imp.get('current_phrase', '')}~~ → "
+            f"**{imp.get('improved_phrase', '')}**"
+        )
+    proj = ats.get("best_project_to_highlight", {})
+    if proj:
+        lines += [
+            "", "## Best Project to Highlight",
+            f"**{proj.get('project_name', '')}**",
+            proj.get("why_this_project", ""),
+            f"Frame as: *{proj.get('how_to_frame_it', '')}*",
+        ]
+    for flag in ats.get("red_flags", []):
+        lines.append(f"- ⚠ {flag}")
+    return "\n".join(lines)
