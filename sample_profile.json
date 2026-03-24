@@ -1,59 +1,91 @@
 {
-  "personal": {
-    "name": "Your Full Name",
-    "email": "you@email.com",
-    "phone": "+91 98765 43210",
-    "location": "City, Country",
-    "linkedin": "linkedin.com/in/yourhandle",
-    "github": "github.com/yourhandle",
-    "portfolio": "yourwebsite.com"
-  },
-  "summary": "Write 2-3 lines about yourself. Your role, years of experience, and what you are best at.",
-  "experience": [
-    {
-      "company": "Your Current Company",
-      "title": "Your Current Title",
-      "duration": "Jan 2022 - Present",
-      "bullets": [
-        "Action verb + what you did + measurable result with a number",
-        "Action verb + what you did + measurable result with a number",
-        "Action verb + what you did + measurable result with a number"
-      ]
-    },
-    {
-      "company": "Your Previous Company",
-      "title": "Your Previous Title",
-      "duration": "Jun 2019 - Dec 2021",
-      "bullets": [
-        "Action verb + what you did + measurable result with a number",
-        "Action verb + what you did + measurable result with a number"
-      ]
-    }
-  ],
-  "education": [
-    {
-      "institution": "Your University Name",
-      "degree": "Your Degree",
-      "year": "2019",
-      "gpa": "8.5/10"
-    }
-  ],
-  "skills": {
-    "technical": ["Skill 1", "Skill 2", "Skill 3", "Skill 4"],
-    "tools": ["Tool 1", "Tool 2", "Tool 3", "Tool 4"],
-    "soft": ["Leadership", "Communication", "Problem Solving"]
-  },
-  "projects": [
-    {
-      "name": "Project Name",
-      "description": "What you built and why",
-      "tech_stack": ["Python", "React"],
-      "impact": "What result it produced"
-    }
-  ],
-  "certifications": ["Certification Name - Issuing Body"],
-  "achievements": [
-    "Award or recognition you received",
-    "Something you won or were selected for"
-  ]
-}
+    "name": "ChandanKumar",
+    "email": "chandan875792@gmail.com",
+    "phone": "+91-7209062108",
+    "location": "Noida, India",
+    "current_title": "Data Science Intern",
+    "years_experience": 0,
+    "summary": "Data Scientist with production experience in NLP, deep learning, LLMs, and time-series forecasting. IIT Kharagpur alumnus skilled in feature engineering, statistical modeling, and generative AI. Delivered a demand forecasting engine achieving 95% Recall on surge detection, enterprise NLP pipelines reducing manual processing by 30%, and RAG systems with 92%+ answer faithfulness.",
+    "skills": [
+      "Python",
+      "SQL",
+      "Java",
+      "JavaScript",
+      "TypeScript",
+      "Go",
+      "Linear Regression",
+      "Logistic Regression",
+      "SVM",
+      "Decision Trees",
+      "Random Forest",
+      "Bagging",
+      "Boosting",
+      "XG Boost",
+      "PCA",
+      "K-Means",
+      "DBSCAN",
+      "CNN",
+      "RNN",
+      "LSTM",
+      "Transformer Architecture",
+      "Attention Mechanisms",
+      "Fine-tuning (LoRA, PEFT)",
+      "TensorFlow",
+      "PyTorch",
+      "Scikit-learn",
+      "HuggingFace Transformers",
+      "spaCy",
+      "XGBoost",
+      "LangChain",
+      "LangGraph",
+      "RAG",
+      "Prompt Engineering",
+      "OpenAI API",
+      "Ollama",
+      "MLflow",
+      "FastAPI",
+      "Docker",
+      "Kubernetes",
+      "GitHub Actions",
+      "Pydantic",
+      "ChromaDB",
+      "Pinecone",
+      "FAISS",
+      "SQL",
+      "NoSQL",
+      "Hypothesis Testing",
+      "A/B Testing",
+      "Time-Series Analysis",
+      "Tweedie Regression",
+      "Cross-Validation"
+    ],
+    "experience": [
+      {
+        "company": "Valiance Solutions",
+        "title": "Data Science Intern",
+        "duration": "09/2025 - 03/2026",
+        "description": "Developed TensorFlow document classification model achieving 90%+ accuracy on unstructured enterprise datasets, reducing manual review time by 30% across client workflows. Engineered enterprise Agentic RAG system for regulatory compliance Q&A using LLMs and vector retrieval; reduced average query response time by 40% in production. Automated end-to-end ML pipelines (labeling, training, inference) with MLflow tracking, improving workflow scalability and deployment repeatability."
+      },
+      {
+        "company": "Kalolwala & Associates",
+        "title": "AI Developer Intern",
+        "duration": "07/2025 - 09/2025",
+        "description": "Built spaCy and Transformer-based NLP pipelines to extract and summarize stakeholder insights from financial reports; implemented sentiment analysis and topic modeling with real-time audience engagement metrics."
+      }
+    ],
+    "education": [
+      {
+        "institution": "Indian Institute of Technology Kharagpur",
+        "degree": "Dual Degree B.Tech + M.Tech",
+        "year": "2025"
+      }
+    ],
+    "target_roles": [
+      "Data Scientist",
+      "AI Developer"
+    ],
+    "target_locations": [
+      "Noida, India"
+    ],
+    "min_salary": ""
+  }
