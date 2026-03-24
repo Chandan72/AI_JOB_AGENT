@@ -2,7 +2,7 @@
     "entrypoint": ".",
     "graphs": {
         "job_hunter":"job_hunter/graph.py:job_hunter_graph",
-        "job_app":"src/graph.py:job_application_graph"
+        "job_app":"job_app/graph.py:job_application_graph"
     },
     "env": ".env",
     "python_version": "3.12",
