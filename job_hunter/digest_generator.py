@@ -12,7 +12,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 
-from Job_app.config import Config
+from job_app.config import Config
 
 
 def generate_html_digest(

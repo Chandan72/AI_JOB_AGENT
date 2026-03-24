@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from datetime import datetime
 from tavily import TavilyClient
-from Job_app.config import Config
+from job_app.config import Config
 
 
 # ── Platform configs ───────────────────────────────────────────
