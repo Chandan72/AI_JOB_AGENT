@@ -77,7 +77,7 @@ def scrape_jobs(
             try:
                 results = client.search(
                     query=search_term,
-                    search_depth="basics",
+                    search_depth="ultra-fast",
                     max_results=max_results_per_query,
                 )
 

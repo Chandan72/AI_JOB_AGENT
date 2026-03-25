@@ -1,5 +1,5 @@
 """
-state.py — Job Hunter Agent State
+— Job Hunter Agent State
 ───────────────────────────────────
 Separate state from the main pipeline.
 The job hunter is an independent agent

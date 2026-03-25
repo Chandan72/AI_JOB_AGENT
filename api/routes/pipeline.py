@@ -6,9 +6,9 @@ from pathlib import Path
 from fastapi import APIRouter, BackgroundTasks
 from api.models import PipelineRequest
 from langchain_core.prompts import ChatPromptTemplate
-from src.config import get_llm
-from src.prompts import EMAIL_REGENERATION_PROMPT
-from src.email_sender import send_email
+from job_app.config import get_llm
+from job_app.prompts import EMAIL_REGENERATION_PROMPT
+from job_app.email_sender import send_email
 
 
 router = APIRouter(prefix="/api/pipeline", tags=["pipeline"])
@@ -57,7 +57,7 @@ async def _run_pipeline_task(request: PipelineRequest):
 
         _pipeline_results["progress"] = "Extracting job details..."
 
-        from src.graph import job_application_graph
+        from job_app.graph import job_application_graph
 
         job_input = request.job_url or request.job_description
         if not job_input:
