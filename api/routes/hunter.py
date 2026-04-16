@@ -56,6 +56,7 @@ async def _run_hunter_task():
                 "success": False,
                 "message": "Profile not found. Complete onboarding first.",
                 "jobs": [],
+                "run_date": datetime.now().strftime("%B %d, %Y at %H:%M"),
             }
             return
 
@@ -79,6 +80,7 @@ async def _run_hunter_task():
                 "success": False,
                 "message": final_state["error"],
                 "jobs": [],
+                "run_date": datetime.now().strftime("%B %d, %Y at %H:%M"),
             }
             return
 
@@ -119,4 +121,5 @@ async def _run_hunter_task():
             "message": str(e),
             "jobs": [],
             "progress": "Failed",
+            "run_date": datetime.now().strftime("%B %d, %Y at %H:%M"),
         }

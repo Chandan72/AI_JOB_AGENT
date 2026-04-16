@@ -1,0 +1,37 @@
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Git
+.git/
+.gitignore
+
+# IDE / editor
+.vscode/
+.idea/
+.cursor/
+*.swp
+*.swo
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Secrets — NEVER bake into the image
+.env
+
+# Runtime data (mounted as volumes instead)
+outputs/
+candidate_data/
+cache/
+job_hunter/jobs_tracker.db
+
+# Docs & misc
+*.md
+LICENSE
+my-config-temp/
