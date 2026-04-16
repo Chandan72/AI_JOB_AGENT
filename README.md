@@ -123,8 +123,8 @@ capabilities that do not exist in a default Cursor session.
 
 ### Installation
 ```bash
-git clone https://github.com/YOUR_USERNAME/ai-job-agent
-cd ai-job-agent
+git clone https://github.com/Chandan72/AI_JOB_AGENT
+cd AI_JOB_AGENT
 python -m venv .venv
  .venv\Scripts\activate
 pip install -r requirements.txt
@@ -135,7 +135,7 @@ cp .env.example .env
 ### Run
 ```bash
 # Full web UI (recommended)
-streamlit python app.py
+ python app.py
 
 # CLI pipeline
 python main.py --url "https://wellfound.com/jobs/..."

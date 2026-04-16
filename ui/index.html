@@ -647,14 +647,20 @@ function pollHuntStatus() {
             data.progress;
         }
   
-        if (!data.running && data.run_date) {
+        if (!data.running) {
           clearInterval(huntPollTimer);
           huntPollTimer = null;
           resetHuntUI();
-          loadJobs(data.jobs, data.run_date, data.total_scraped);
-          document.getElementById('sched-last').textContent =
-            `Last run: ${data.run_date}`;
-          toast(`Found ${data.jobs.length} job matches!`);
+          if (data.success && data.jobs && data.jobs.length > 0) {
+            loadJobs(data.jobs, data.run_date, data.total_scraped);
+            document.getElementById('sched-last').textContent =
+              `Last run: ${data.run_date}`;
+            toast(`Found ${data.jobs.length} job matches!`);
+          } else if (data.success) {
+            toast('Hunt complete — no new matches found');
+          } else {
+            toast('Hunt failed: ' + (data.message || 'Unknown error'));
+          }
         }
       } catch (e) {
         // Ignore network errors during polling
@@ -967,6 +973,7 @@ async function startPipeline(jobInput, emailTargetType = 'auto') {
   });
 
   let progress = 10;
+  let pollCount = 0;
   pipelinePollTimer = setInterval(async () => {
     pollCount++;
     if (pollCount > 100) {

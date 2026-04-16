@@ -1,0 +1,49 @@
+services:
+  # --- Pipeline 1: FastAPI web server + UI ---
+  web:
+    build: .
+    image: ai-job-agent:latest
+    # Production: run uvicorn directly without hot-reload
+    command: >
+      uvicorn api.server:app
+      --host 0.0.0.0
+      --port 8000
+      --workers 2
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - outputs:/app/outputs
+      - candidate_data:/app/candidate_data
+      - cache:/app/cache
+      - hunter_db:/app/job_hunter
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  # --- Pipeline 2: Daily job hunter scheduler ---
+  hunter:
+    image: ai-job-agent:latest
+    depends_on:
+      web:
+        condition: service_healthy
+    command: python hunter_main.py start
+    env_file:
+      - .env
+    volumes:
+      - outputs:/app/outputs
+      - candidate_data:/app/candidate_data
+      - cache:/app/cache
+      - hunter_db:/app/job_hunter
+    restart: unless-stopped
+
+volumes:
+  outputs:
+  candidate_data:
+  cache:
+  hunter_db:
